@@ -1,0 +1,27 @@
+Package: playaxdata
+Type: Package
+Title: Easy access to Playax data from R
+Version: 0.17.0
+Author: Giuliano Mega
+Maintainer: Giuliano Mega <giuliano@playax.com>
+Description: An evolving client and API for accessing Playax data from R.
+Encoding: UTF-8
+LazyData: true
+Imports: 
+  dbplyr (>= 1.4.2),
+  dplyr (>= 0.8.3),
+  megautils (>= 0.10.0),
+  magrittr (>= 1.5)
+RoxygenNote: 7.1.0
+Collate: 
+    'generics.R'
+    'globals.R'
+    'locations.R'
+    'mariadb.R'
+    'misc.R'
+    'packages.R'
+    'raw_social_metrics.R'
+    'period_metrics.R'
+    'right_holders.R'
+    'tracks.R'
+    'web_metrics.R'
