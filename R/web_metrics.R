@@ -21,22 +21,6 @@ METRIC_TYPES <- l(
 )
 
 #' @export
-web_metric_source <- function(name) {
-  SOURCE_NAMES[[glue::glue('{stringr::str_to_title(name)}Count')]]
-}
-
-#' @export
-web_metric_type <- function(name) {
-  METRIC_TYPES[[tolower(name)]]
-}
-
-#' @export
-as.web_metrics <- function(.tbl) {
-  class(.tbl) <- c('web_metrics', class(.tbl))
-  .tbl
-}
-
-#' @export
 web_metrics <- function(with_right_holders = FALSE) {
   # Due to limitations with ColumnStore, we cannot use with_right_holders as
   # an enrichment. We have to build the query by hand, right from the start.
@@ -57,8 +41,31 @@ web_metrics <- function(with_right_holders = FALSE) {
        WHERE trh.role = "Interpreter" AND rh.group_id IS NULL'
     )
   }
-  class(tbl) <- c(class(tbl), 'web_metrics')
-  tbl
+  new_web_metrics(tbl)
+}
+
+#' @export
+collect.web_metrics <- function(x, ...) new_web_metrics(NextMethod())
+
+new_web_metrics <- function(.tbl) {
+  class(.tbl) <- c('web_metrics', class(.tbl))
+  .tbl
+}
+
+#' @export
+web_metric_source <- function(name) {
+  SOURCE_NAMES[[glue::glue('{stringr::str_to_title(name)}Count')]]
+}
+
+#' @export
+web_metric_type <- function(name) {
+  METRIC_TYPES[[tolower(name)]]
+}
+
+#' @export
+as.web_metrics <- function(.tbl) {
+  class(.tbl) <- c('web_metrics', class(.tbl))
+  .tbl
 }
 
 #' @export

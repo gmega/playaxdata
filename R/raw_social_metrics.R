@@ -75,6 +75,19 @@ mapping_table <- function() {
 }
 
 #' @export
+raw_social_metrics <- function() {
+  new_rsm(db_tbl('raw_social_metrics_cs'))
+}
+
+#' @export
+collect.rsm <- function(x, ...) new_rsm(NextMethod())
+
+new_rsm <- function(.tbl) {
+  class(.tbl) <- c('rsm', class(.tbl))
+  .tbl
+}
+
+#' @export
 supported_metric_types_.rsm <- function(.tbl, source, metric_type) {
   names(MAPPINGS[[source]])
 }
@@ -82,18 +95,6 @@ supported_metric_types_.rsm <- function(.tbl, source, metric_type) {
 #' @export
 supported_sources.rsm <- function(.tbl) {
   names(MAPPINGS)
-}
-
-#' @export
-raw_social_metrics <- function() {
-  tbl <- db_tbl('raw_social_metrics_cs')
-  tbl %>% as.rsm()
-}
-
-#' @export
-as.rsm <- function(.tbl) {
-  class(.tbl) <- c('rsm', class(.tbl))
-  .tbl
 }
 
 #' @export

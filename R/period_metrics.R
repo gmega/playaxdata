@@ -16,36 +16,42 @@ METRIC_NAMES <- c(
 
 #' @export
 week_metrics <- function() {
-  db_tbl('week_metrics') %>% as.week_metrics
+  new_week_metrics(db_tbl('week_metrics'))
 }
 
 #' @export
 month_metrics <- function() {
-  db_tbl('month_metrics') %>% as.month_metrics
+  new_month_metrics(db_tbl('month_metrics'))
 }
 
 #' @export
 year_metrics <- function() {
-  db_tbl('year_metrics') %>% as.year_metrics
+  new_year_metrics(db_tbl('year_metrics'))
 }
 
 #' @export
 day_metrics <- raw_social_metrics
 
 #' @export
-as.week_metrics <- function(.tbl) {
+collect.week_metrics <- function(x, ...) new_week_metrics(NextMethod())
+
+#' @export
+collect.month_metrics <- function(x, ...) new_month_metrics(NextMethod())
+
+#' @export
+collect.year_metrics <- function(x, ...) new_year_metrics(NextMethod())
+
+new_week_metrics <- function(.tbl) {
   class(.tbl) <- c('week_metrics', 'period_metrics', class(.tbl))
   .tbl
 }
 
-#' @export
-as.month_metrics <- function(.tbl) {
+new_month_metrics <- function(.tbl) {
   class(.tbl) <- c('month_metrics', 'period_metrics', class(.tbl))
   .tbl
 }
 
-#' @export
-as.year_metrics <- function(.tbl) {
+new_year_metrics <- function(.tbl) {
   class(.tbl) <- c('year_metrics', 'period_metrics', class(.tbl))
   .tbl
 }
