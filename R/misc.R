@@ -25,7 +25,7 @@ get_parlist <- function(..., .dots = NULL) {
     .dots
   } else {
     ellipsis::check_dots_unnamed()
-    list(.dots)
+    list(...)
   }
 }
 
