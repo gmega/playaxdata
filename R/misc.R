@@ -31,7 +31,9 @@ get_parlist <- function(..., .dots = NULL) {
 
 check_in_memory <- function(.tbl) {
   if (!('tbl_df' %in% class(.tbl))) {
-    stop('This function only works for tables brought in-memory with `collect`.')
+    parent <- sys.calls()[[sys.nframe() - 1]]
+    stop(glue::glue('{parent}: This function only works ',
+                    'for tables brought in-memory with `collect`.'))
   }
 }
 
@@ -58,3 +60,5 @@ col_classes <- function(.tbl) {
     collect %>%
     summarise_all(class)
 }
+
+join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join

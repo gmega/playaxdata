@@ -1,3 +1,5 @@
+# TODO use metric_type_mapping instead of hardcoded mappings for mappings and deciding whether do diff or not.
+
 MAPPINGS <- l(
   spotify = l(
     # From https://github.com/playax/playax/blob/master/app/models/concerns/external_id_spotify.rb
@@ -8,7 +10,7 @@ MAPPINGS <- l(
 
     # Mapped
     plays = streams,
-    active_audience = popularity,
+    active_audience = listeners,
 
     cumulative = c('followers')
   ),
@@ -74,16 +76,31 @@ mapping_table <- function() {
   )
 }
 
-#' @export
-raw_social_metrics <- function() {
-  new_rsm(db_tbl('raw_social_metrics_cs'))
-}
+# Raw social metrics come into a few flavors.
 
 #' @export
-collect.rsm <- function(x, ...) new_rsm(NextMethod())
+raw_social_metrics <- function() new_rsm(
+  db_tbl('raw_social_metrics_cs'), 'source_name')
 
-new_rsm <- function(.tbl) {
+#' @export
+city_social_metrics <- function() new_rsm(
+  db_tbl('city_social_metrics'), 'source_name_idx')
+
+#' @export
+state_social_metrics <- function() new_rsm(
+  db_tbl('state_social_metrics'), 'source_name_idx')
+
+#' @export
+region_social_metrics <- function() new_rsm(
+  db_tbl('region_social_metrics'), 'source_name_idx')
+
+#' @export
+collect.rsm <- function(x, ...) new_rsm(
+  NextMethod(), attributes(x)$source_name_idx)
+
+new_rsm <- function(.tbl, source_name_idx) {
   class(.tbl) <- c('rsm', class(.tbl))
+  attributes(.tbl)$source_name_idx = source_name_idx
   .tbl
 }
 
@@ -98,6 +115,15 @@ supported_sources.rsm <- function(.tbl) {
 }
 
 #' @export
+for_right_holder_.rsm <- function(.tbl, ..., .dots = NULL) {
+  external_ids <- db_tbl('right_holder_external_ids') %>%
+    for_right_holder(..., .dots = .dots) %>%
+    pull(source_id)
+
+  .tbl %>% filter(source_id %in% external_ids)
+}
+
+#' @export
 for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
   source_name <- tolower(source_name)
   src_index <- source_index(source_name)
@@ -106,7 +132,9 @@ for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
   }
 
   attributes(.tbl)$selected_source <- source_name
-  .tbl <- .tbl %>% filter(source_name == !!src_index)
+  source_name_idx <- as.symbol(attributes(.tbl)$source_name_idx)
+
+  .tbl <- .tbl %>% filter(!!source_name_idx == !!src_index)
 
   if (add_source_names) .tbl %>% mutate(source_name = !!source_name) else .tbl
 }
@@ -143,6 +171,7 @@ with_right_holders_.rsm <- function(.tbl, drop_invalid = TRUE) {
 
 #' @export
 with_source_names.rsm <- function(.tbl) {
+  if ('source')
   # FIXME well, we're copying the whole thing into memory. Ideally we should
   # not surprise the user with something like this.
   .tbl %>%
