@@ -9,6 +9,10 @@ find_right_holders(..., .dots = NULL, mode = c("any", "all", "main"))
 }
 \arguments{
 \item{...}{a set of right holder names to resolve.}
+
+\item{match}{mode. 'any' will return any matching pseudonym; 'all' will
+return all pseudonyms, 'main' will return only the main pseudonym,
+or error out if there is more than one.}
 }
 \value{
 a \code{\link{data.frame}} containing a `pseudo` and a `right_holder_id`

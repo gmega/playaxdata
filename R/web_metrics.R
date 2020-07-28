@@ -91,10 +91,13 @@ for_dates_.web_metrics <- function(.tbl, start, end) {
 
 #' @export
 aggregate.web_metrics <- function(.tbl) {
-  .tbl %>%
-    mutate(date = parse_date_time(end, 'Y!-m!*-d! H!:M!:S!')) %>%
-    select(-id, -web_count_id, -start, -end, -created_at) %>%
-    group_by_at(vars(-contains('metric_value'))) %>%
-    summarise(metric_value = sum(metric_value, na.rm = TRUE)) %>%
-    ungroup()
+  check_in_memory(.tbl)
+  new_web_metrics(
+    .tbl %>%
+      mutate(date = parse_date_time(end, 'Y!-m!*-d! H!:M!:S!')) %>%
+      select(-id, -web_count_id, -start, -end, -created_at) %>%
+      group_by_at(vars(-contains('metric_value'))) %>%
+      summarise(metric_value = sum(metric_value, na.rm = TRUE)) %>%
+      ungroup()
+    )
 }
