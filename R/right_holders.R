@@ -32,16 +32,14 @@ with_right_holders_.default <- function(.tbl, drop_invalid = TRUE) {
          info to a table lacking a right_holder_id column.')
   }
 
-  if (drop_invalid) {
-    .tbl %>% inner_join(db_tbl('right_holders'),
-                       by = c('right_holder_id' = 'id'),
-                       suffix = c('', '.rhs')) %>%
-      filter(is.null(group_id))
-  } else {
-    .tbl %>% left_join(db_tbl('right_holders'),
-                       by = c('right_holder_id' = 'id'),
-                       suffix = c('', '.rhs'))
-  }
+  .tbl <- .tbl %>%
+    join_mode(drop_invalid)(
+      db_tbl('right_holders'),
+      by = c('right_holder_id' = 'id'),
+      suffix = c('', '.rhs')
+    )
+
+  if (!drop_invalid) .tbl else .tbl %>% filter(is.null(group_id))
 }
 
 
@@ -71,7 +69,7 @@ with_pseudos <- function(.tbl, main = TRUE) {
 #' pseudonyms.
 #'
 #' @param ... a set of right holder names to resolve.
-#' @mode match mode. 'any' will return any matching pseudonym; 'all' will
+#' @param match mode. 'any' will return any matching pseudonym; 'all' will
 #'             return all pseudonyms, 'main' will return only the main pseudonym,
 #'             or error out if there is more than one.
 #'
@@ -83,7 +81,7 @@ with_pseudos <- function(.tbl, main = TRUE) {
 #'
 #' @export
 find_right_holders <- function(..., .dots = NULL, mode = c('any', 'all', 'main')) {
-  pseudos <- if (is.null(.dots)) list(...) else .dots
+  pseudos <- get_parlist(..., .dots = .dots)
   # This is SLOW. Ideally we should carve up a multi-right-holder version of
   # find_right_holder and treat the single right holder function as the
   # special case.
@@ -164,11 +162,13 @@ find_right_holder <- function(name, mode = c('any', 'all', 'main')) {
   pseudos$right_holder_id
 }
 
-resolve_right_holder <- function(right_holder) {
-  if (is.character(right_holder)) {
-    find_right_holder(right_holder, 'main')
-  } else if(is.numeric(right_holder)) {
-    right_holder
+resolve_right_holders <- function(..., .dots = NULL) {
+  right_holders <- get_parlist(..., .dots = .dots)
+
+  if (all(sapply(right_holders, is.character))) {
+    find_right_holders(.dots = right_holders, mode = 'any')$right_holder_id
+  } else if(all(sapply(right_holders, is.numeric))) {
+    unlist(right_holders)
   } else {
     stop(glue::glue('Right holders must be string or numeric, not {right_holder}.'))
   }

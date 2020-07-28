@@ -21,7 +21,7 @@
 #'
 #' @export
 for_right_holder <- function(.tbl, ..., .dots = NULL) {
-  for_right_holder_(.tbl, .dots = find_right_holders(..., .dots = .dots)$right_holder_id)
+  for_right_holder_(.tbl, .dots = resolve_right_holders(..., .dots = .dots))
 }
 
 for_right_holder_ <- function(.tbl, ..., .dots = NULL) {
@@ -176,4 +176,3 @@ with_source_names <- function(.tbl, colname = 'source_name') {
 with_metric_types <- function(.tbl, colname = 'metric_type') {
   UseMethod('with_metric_types')
 }
-
