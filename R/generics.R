@@ -79,18 +79,23 @@ for_source <- function(.tbl, source_name, add_source_names = TRUE) {
 #' When supported, standard metrics have a well-defined semantics. Usually
 #' used with \code{\link{for_metric_type}}.
 #'
+#' Taken from \link{https://github.com/playax/playax/blob/master/app/models/concerns/period_metric.rb}.
+#'
 STANDARD_METRICS <- list(
-  likes = 'likes',
-  followers = 'followers',
   plays = 'plays',
-  active_audience = 'active_audience'
+  followers = 'followers',
+  active_audience = 'active_audience',
+  playax = 'playax',
+  internet = 'internet',
+  streaming = 'streaming',
+  social = 'social'
 )
 
 #' Filters a given table by metric type
 #'
 #' Supported metric types depend on the table and, for some tables, may also
 #' depend on the source. For that reason, it may not be possible to filter by
-#' metric type before specifying a source filter. See
+#' a metric type before specifying a source filter. See
 #' \code{\link{supported_metric_types}} to verify which metric types are supported.
 #'
 #' @seealso supported_metric_types
@@ -161,7 +166,7 @@ for_location <- function(.tbl, city = NULL, state = NULL,
 #' database.
 #'
 #' @export
-with_source_names <- function(.tbl, colname = 'source_name') {
+with_source_names <- function(.tbl) {
   UseMethod('with_source_names')
 }
 
@@ -173,6 +178,6 @@ with_source_names <- function(.tbl, colname = 'source_name') {
 #' database.
 #'
 #' @export
-with_metric_types <- function(.tbl, colname = 'metric_type') {
+with_metric_types <- function(.tbl) {
   UseMethod('with_metric_types')
 }

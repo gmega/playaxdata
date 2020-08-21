@@ -5,15 +5,6 @@
 # Week metrics are aligned on Fridays.
 FRIDAY_INDEX <- 5
 
-# From https://github.com/playax/playax/blob/master/app/models/concerns/period_metric.rb
-METRIC_NAMES <- c(
-  STANDARD_METRICS$plays,
-  STANDARD_METRICS$followers,
-  STANDARD_METRICS$active_audience,
-  'playax_index',
-  'playax_index_internet'
-)
-
 #' @export
 week_metrics <- function() {
   new_week_metrics(db_tbl('week_metrics'))
@@ -114,7 +105,8 @@ for_metric_type.period_metrics <- function(.tbl, metric_type) {
 supported_sources.period_metrics <- function(.tbl) {
   source_name_mapping %>%
     filter(!is.na(period_metrics_index)) %>%
-    pull(source_name)
+    pull(source_name) %>%
+    tolower
 }
 
 #' @export

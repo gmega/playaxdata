@@ -5,7 +5,7 @@
 \alias{STANDARD_METRICS}
 \title{Standard metric types}
 \format{
-An object of class \code{list} of length 4.
+An object of class \code{list} of length 7.
 }
 \usage{
 STANDARD_METRICS
@@ -13,5 +13,8 @@ STANDARD_METRICS
 \description{
 When supported, standard metrics have a well-defined semantics. Usually
 used with \code{\link{for_metric_type}}.
+}
+\details{
+Taken from \link{https://github.com/playax/playax/blob/master/app/models/concerns/period_metric.rb}.
 }
 \keyword{datasets}

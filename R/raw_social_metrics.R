@@ -1,79 +1,53 @@
-# TODO use metric_type_mapping instead of hardcoded mappings for mappings and deciding whether do diff or not.
-
+#' Source-specific metric mappings
+#'
+#' List containing source-specific metrics with their original naming.
+#' Some of those get mapped into \code{\link{STANDARD_METRICS}} through
+#' the \code{\link{metric_type_mapping}} table.
+#'
 MAPPINGS <- l(
   spotify = l(
     # From https://github.com/playax/playax/blob/master/app/models/concerns/external_id_spotify.rb
     followers = 0,
     popularity = 1,
     listeners = 2,
-    streams = 3,
-
-    # Mapped
-    plays = streams,
-    active_audience = listeners,
-
-    cumulative = c('followers')
+    streams = 3
   ),
 
   # From https://github.com/playax/playax/blob/master/app/models/concerns/external_id_youtube.rb
   youtube = l(
     subscriber_count = 0,
-    view_count = 1,
-
-    # Mapped
-    followers = subscriber_count,
-    plays = view_count,
-
-    cumulative = c('plays', 'followers')
+    view_count = 1
   ),
 
   # From https://github.com/playax/playax/blob/master/app/models/concerns/external_id_knowledge_graph.rb
   knowledgegraph = l(
     track_plays = 0,
-    artist_plays = 1,
-
-    # Mapped
-    plays = artist_plays
+    artist_plays = 1
   ),
 
   facebook = l(
     page_fans = 0,
-    talking_about_this = 1,
-
-    # Mapped
-    likes = page_fans,
-    active_audience = talking_about_this,
-
-    cumulative = c('likes', 'followers')
+    talking_about_this = 1
   ),
 
   instagram = l(
     followers = 0,
     likes = 1,
     comments = 2,
-    medias = 3,
-
-    # Mapped
-    # likes and followers are already mapped
-
-    cumulative = c('followers')
+    medias = 3
   )
 )
 
 mapping_table <- function() {
-  do.call(
-    rbind,
-    lapply(names(MAPPINGS), function(source_name) {
-      entry <- MAPPINGS[[source_name]]
-      metrics <- entry[names(entry) %in% STANDARD_METRICS]
-      tibble(
-        source_name_str = source_name,
-        metric_type_str = names(metrics),
-        source_name = source_index(source_name),
-        metric_type = unname(unlist(metrics))
-      )
-    })
-  )
+  metric_type_mapping %>%
+    inner_join(source_name_mapping,
+               by = c('source_name' = 'raw_social_metrics_index'), suffix = c('', '.snm')) %>%
+    mutate(metric_type_str = unlist(playaxdata:::STANDARD_METRICS)[metric_type_to + 1]) %>%
+    rename(
+      source_name_str = source_name.snm,
+      metric_type = metric_type_from
+    ) %>%
+    select(-metric_type_to, -period_metrics_index)
 }
 
 # Raw social metrics come into a few flavors.
@@ -106,12 +80,22 @@ new_rsm <- function(.tbl, source_name_idx) {
 
 #' @export
 supported_metric_types_.rsm <- function(.tbl, source, metric_type) {
-  names(MAPPINGS[[source]])
+  c(names(MAPPINGS[[source]]),
+    table_entry(mapping_table(), source, source_name_str,
+                'source')$metric_type_str)
 }
 
 #' @export
 supported_sources.rsm <- function(.tbl) {
-  names(MAPPINGS)
+  source_indices <- raw_social_metrics() %>%
+    select(source_name) %>%
+    distinct %>%
+    collect %>%
+    pull(source_name)
+
+  source_name_mapping %>%
+    filter(raw_social_metrics_index %in% source_indices) %>%
+    pull(source_name) %>% tolower
 }
 
 #' @export
@@ -141,17 +125,40 @@ for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
 
 #' @export
 for_metric_type.rsm <- function(.tbl, metric_type, add_metric_types = FALSE) {
-  source_name <- attributes(.tbl)$selected_source
-  if (is.null(source_name)) {
-    stop('Must select a source with for_source first')
-  }
-  type_index <- MAPPINGS[[source_name]][[metric_type]]
-  if (is.null(type_index)) {
-    stop(glue::glue('Unknown metric type {metric_type}'))
+  metric_index <- if (metric_type %in% STANDARD_METRICS) {
+    resolve_sd(metric_type)
+  } else {
+    resolve_ns(.tbl, metric_type)
   }
 
-  .tbl <- .tbl %>% filter(metric_type == !!type_index)
+  .tbl <- if (length(metric_index) > 1) {
+    .tbl %>% filter(metric_type %in% metric_index)
+  } else {
+    .tbl %>% filter(metric_type == metric_index)
+  }
+
   if (add_metric_types) .tbl %>% mutate(metric_type = !!metric_type) else .tbl
+}
+
+resolve_sd <- function(metric_type) {
+  unique(table_entry(mapping_table(), metric_type,
+              metric_type_str, 'metric type')$metric_type)
+}
+
+resolve_ns <- function(.tbl, metric_type) {
+  source_name <- attributes(.tbl)$selected_source
+
+  if (!is.null(source_names)) {
+    stop('Non-standard metric types require a',
+         ' source to be selected first with `for_source`.',
+         'Check that you\'ve typed your metric type right.')
+  }
+
+  type_index <- MAPPINGS[[source_name]][[metric_type]]
+  if (is.null(type_index)) {
+    stop(glue::glue('Unknown metric type {metric_type} for {source_name}.'))
+  }
+  type_index
 }
 
 #' @export
@@ -171,13 +178,24 @@ with_right_holders_.rsm <- function(.tbl, drop_invalid = TRUE) {
 
 #' @export
 with_source_names.rsm <- function(.tbl) {
-  if ('source')
+  check_columns(.tbl, c('metric_type' = 'integer',
+                        'source_name' = c('integer', 'character')))
+
+  # It might be that the source name has been already patched into the table
+  # by for_source. In this case, we have to join by the string name.
+  by_source = if (class(.tbl$source_name) == 'character') {
+    c('source_name' = 'source_name_str')
+  } else {
+    c('source_name')
+  }
+  by_source <- c(by_source, 'metric_type')
+
   # FIXME well, we're copying the whole thing into memory. Ideally we should
   # not surprise the user with something like this.
   .tbl %>%
     collect %>%
-    inner_join(mapping_table(), by = c('source_name', 'metric_type')) %>%
-    select(-source_name, -metric_type) %>%
+    inner_join(mapping_table(), by = by_source) %>%
+    select(-source_name, -metric_type, -aggregation_function) %>%
     rename(source_name = source_name_str, metric_type = metric_type_str)
 }
 
@@ -200,13 +218,17 @@ diff_metrics <- function(.tbl) {
     .tbl, c('source_name' = 'character', 'metric_type' = 'character')
   )
 
-  for (source_name in names(MAPPINGS)) {
-    metric_spec <- MAPPINGS[[source_name]]
-    cumulatives <- metric_spec$cumulatives
-    if (is.null(cumulatives)) {
+  mappings <- mapping_table()
+
+  for (source_name in mappings$source_name_str) {
+    cumulatives <- mappings %>%
+      filter(source_name_str == source_name,
+             aggregation_function == 'last_value')
+    if (!nrow(cumulatives)) {
       next
     }
-    for (metric_type in cumulatives) {
+
+    for (metric_type in cumulatives$metric_type_str) {
       .tbl <- diff_metric(.tbl, source_name, metric_type)
     }
   }

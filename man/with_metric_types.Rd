@@ -4,7 +4,7 @@
 \alias{with_metric_types}
 \title{Adds symbolic metric types into the current table, for all sources}
 \usage{
-with_metric_types(.tbl, colname = "metric_type")
+with_metric_types(.tbl)
 }
 \description{
 Decodes metric types in the current table into strings, either by replacing

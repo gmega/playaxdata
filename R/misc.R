@@ -42,14 +42,19 @@ check_columns <- function(.tbl, expected_columns) {
   actual_classes <- col_classes(.tbl)
 
   for (expected_column in names(expected_columns)) {
-    expected_class <- expected_columns[[expected_column]]
+    expected_classes <- expected_columns[[expected_column]]
     if (!(expected_column %in% actual_columns)) {
       stop(glue::glue('Table is missing required column {expected_column}.'))
     }
 
+    # Only checks actual class if there's an actual constraint.
+    if (expected_classes == '*') {
+      next
+    }
+
     actual_class <- actual_classes[[expected_column]]
-    if (!(expected_class %in% actual_class)) {
-      stop(glue::glue('Column {expected_column} should be of class {expected_class}, not {actual_class}.'))
+    if (!any(expected_classes %in% actual_class)) {
+      stop(glue::glue('Column {expected_column} should be of class {expected_classes}, not {actual_class}.'))
     }
   }
 }
@@ -62,3 +67,4 @@ col_classes <- function(.tbl) {
 }
 
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join
+

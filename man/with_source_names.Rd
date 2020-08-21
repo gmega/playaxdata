@@ -4,7 +4,7 @@
 \alias{with_source_names}
 \title{Adds symbolic source names into the current table}
 \usage{
-with_source_names(.tbl, colname = "source_name")
+with_source_names(.tbl)
 }
 \description{
 Decodes source names in the current table into strings, either by replacing

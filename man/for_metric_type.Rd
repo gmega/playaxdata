@@ -9,7 +9,7 @@ for_metric_type(.tbl, metric_type, add_metric_types = TRUE)
 \description{
 Supported metric types depend on the table and, for some tables, may also
 depend on the source. For that reason, it may not be possible to filter by
-metric type before specifying a source filter. See
+a metric type before specifying a source filter. See
 \code{\link{supported_metric_types}} to verify which metric types are supported.
 }
 \seealso{
