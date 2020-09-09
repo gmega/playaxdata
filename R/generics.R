@@ -48,6 +48,9 @@ for_right_holder_.default <- function(.tbl, ..., .dots = NULL) {
   }
 }
 
+#' The smallest possible date
+MIN_DATE <- '1901-01-01'
+
 #' Filters a given table by date bracket
 #'
 #' Will round start and end dates according to the granularity of the receiving
@@ -57,7 +60,8 @@ for_right_holder_.default <- function(.tbl, ..., .dots = NULL) {
 #' @param end the end of a date bracket. Defaults to today.
 #'
 #' @export
-for_dates <- function(.tbl, start, end = NULL) {
+for_dates <- function(.tbl, start = NULL, end = NULL) {
+  start <- if(is.null(start)) MIN_DATE else start
   end <- if (is.null(end)) Sys.Date() else end
   for_dates_(.tbl, start, end)
 }
