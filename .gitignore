@@ -1,4 +1,4 @@
 *Rhistory
-*RData
+.RData
 .Rproj.user
 tests/testthat/*.rds
