@@ -4,7 +4,7 @@
 \alias{for_dates}
 \title{Filters a given table by date bracket}
 \usage{
-for_dates(.tbl, start, end = NULL)
+for_dates(.tbl, start = NULL, end = NULL)
 }
 \arguments{
 \item{start}{the start of a date bracket.}

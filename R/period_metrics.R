@@ -88,17 +88,18 @@ for_source.period_metrics <- function(.tbl, source_name) {
 
   .tbl %>%
     filter(source_type == !!index) %>%
-    mutate(source_type = tolower(source_name))
+    mutate(source_type = !!tolower(source_name))
 }
 
 #' @export
 for_metric_type.period_metrics <- function(.tbl, metric_type) {
-  metric_index <- which(METRIC_NAMES == tolower(metric_type))
+  metric_index <- unname(which(STANDARD_METRICS == tolower(metric_type)))
   if (length(metric_index) == 0) {
     stop(glue::glue('Unknown metric type {metric_type}.'))
   }
-  .tbl %>% filter(metric_type == !!(metric_index - 1)) %>%
-    mutate(metric_type = tolower(metric_type))
+  .tbl %>%
+    filter(metric_type == !!(metric_index - 1)) %>%
+    mutate(metric_type = !!tolower(metric_type))
 }
 
 #' @export
@@ -123,9 +124,9 @@ supported_metric_types_.period_metrics <- function(.tbl, source) {
 
   # Tables often contain oddball metrics in them. We'll discard
   # those and emit a warning.
-  n_metrics <- length(METRIC_NAMES)
+  n_metrics <- length(STANDARD_METRICS)
   if (any(indices >= n_metrics))
     warning('Source contains unmapped metrics which will be dropped.')
 
-  METRIC_NAMES[indices[indices < n_metrics] + 1]
+  STANDARD_METRICS[indices[indices < n_metrics] + 1]
 }
