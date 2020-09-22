@@ -126,12 +126,17 @@ for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
 #' @export
 for_metric_type.rsm <- function(.tbl, metric_type, add_metric_types = FALSE) {
   metric_index <- if (metric_type %in% STANDARD_METRICS) {
-    resolve_sd(metric_type)
+    resolve_sd(.tbl, metric_type)
   } else {
     resolve_ns(.tbl, metric_type)
   }
 
   .tbl <- if (length(metric_index) > 1) {
+    if (has_bug('COLUMNSTORE_IN_BUG')) {
+      # TODO implement OR alternative.
+      stop(paste('Cannot select multiple metric indices in this version',
+           'of columnstore. Please select a source first with for_source.'))
+    }
     .tbl %>% filter(metric_type %in% metric_index)
   } else {
     .tbl %>% filter(metric_type == metric_index)
@@ -140,15 +145,26 @@ for_metric_type.rsm <- function(.tbl, metric_type, add_metric_types = FALSE) {
   if (add_metric_types) .tbl %>% mutate(metric_type = !!metric_type) else .tbl
 }
 
-resolve_sd <- function(metric_type) {
-  unique(table_entry(mapping_table(), metric_type,
+resolve_sd <- function(.tbl, metric_type) {
+  metric_table <- mapping_table()
+
+  # Because of the COLUMNSTORE_IN_BUG we have to actually attempt to
+  # narrow down metric types to a single index when possible.
+  source_name <- attributes(.tbl)$selected_source
+  if (!is.null(source_name)) {
+    metric_table <- table_entry(
+      metric_table, source_name, source_name_str, 'source'
+    )
+  }
+
+  unique(table_entry(metric_table, metric_type,
               metric_type_str, 'metric type')$metric_type)
 }
 
 resolve_ns <- function(.tbl, metric_type) {
   source_name <- attributes(.tbl)$selected_source
 
-  if (!is.null(source_names)) {
+  if (!is.null(source_name)) {
     stop('Non-standard metric types require a',
          ' source to be selected first with `for_source`.',
          'Check that you\'ve typed your metric type right.')
