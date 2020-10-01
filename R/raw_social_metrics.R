@@ -194,8 +194,8 @@ with_right_holders_.rsm <- function(.tbl, drop_invalid = TRUE) {
 
 #' @export
 with_source_names.rsm <- function(.tbl) {
-  check_columns(.tbl, c('metric_type' = 'integer',
-                        'source_name' = c('integer', 'character')))
+  check_columns(.tbl, list('metric_type' = 'integer',
+                        'source_name' = list('integer', 'character')))
 
   # It might be that the source name has been already patched into the table
   # by for_source. In this case, we have to join by the string name.

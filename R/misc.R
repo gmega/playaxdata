@@ -48,7 +48,7 @@ check_columns <- function(.tbl, expected_columns) {
     }
 
     # Only checks actual class if there's an actual constraint.
-    if (expected_classes == '*') {
+    if ((length(expected_classes) == 1) && (expected_classes == '*')) {
       next
     }
 
