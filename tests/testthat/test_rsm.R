@@ -48,7 +48,7 @@ test_that('metric name resolution works', {
   )
 })
 
-test_that('diff_metrics diffs YouTube', {
+test_that('diff_metrics diffs cumulative for single right holder', {
   metrics <- day_metrics() %>%
     for_dates('2020-01-01', '2020-01-05') %>%
     for_source('youtube') %>%
@@ -67,4 +67,30 @@ test_that('diff_metrics diffs YouTube', {
     expected_values,
     actual_values
   )
+})
+
+test_that('diff_metrics diffs cumulative metrics for multiple right holders', {
+  metrics <- day_metrics() %>%
+    for_dates('2020-01-01', '2020-01-05') %>%
+    for_source('youtube') %>%
+    for_metric_type('plays') %>%
+    with_right_holders() %>%
+    filter(right_holder_id == 43744 | right_holder_id == 508) %>%
+    collect
+
+  pull_values <- function(rh_id) {
+    metrics %>%
+      for_right_holder(rh_id) %>%
+      arrange(metric_date) %>%
+      pull(value)
+  }
+
+  # Manually Deaccumulates youtube plays for both artists.
+  yt_43744 <- c(NA, pull_values(43744) %>% diff)
+  yt_508 <-  c(NA, pull_values(508) %>% diff)
+
+  metrics <- metrics %>% with_source_names() %>% diff_metrics()
+
+  expect_equal(yt_43744, pull_values(43744))
+  expect_equal(yt_508, pull_values(508))
 })

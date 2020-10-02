@@ -272,10 +272,16 @@ diff_metrics <- function(.tbl) {
 }
 
 diff_metric <- function(.tbl, source_name, metric_type) {
-  .tbl <- .tbl %>% arrange(metric_date)
-  rows <- .tbl$source_name == source_name & .tbl$metric_type == metric_type
-  .tbl$value[rows] <- c(NA, diff(.tbl$value[rows]))
-  .tbl
+  .tbl %>%
+    arrange(metric_date) %>%
+    group_by(source_name, metric_type, source_id) %>%
+    mutate(
+      value = if_else(
+        source_name == !!source_name & metric_type == !!metric_type,
+        c(NA, diff(value)),
+        value
+      )
+    )
 }
 
 source_index <- function(source_name) {
