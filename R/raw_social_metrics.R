@@ -72,8 +72,9 @@ region_social_metrics <- function() new_rsm(
   db_tbl('region_social_metrics'), 'source_name_idx')
 
 #' @export
-collect.rsm <- function(x, ...) new_rsm(
-  NextMethod(), attributes(x)$source_name_idx)
+collect.rsm <- function(x, ...) mutate(
+  new_rsm(NextMethod(), attributes(x)$source_name_idx),
+  metric_date = as.POSIXct(metric_date)) # freaking DBI bug
 
 new_rsm <- function(.tbl, source_name_idx) {
   class(.tbl) <- c('rsm', class(.tbl))
@@ -197,6 +198,8 @@ with_right_holders_.rsm <- function(.tbl, drop_invalid = TRUE) {
 
 #' @export
 with_source_names.rsm <- function(.tbl) {
+  # We can only do this to in-memory tables.
+  check_in_memory(.tbl)
   check_columns(.tbl, list('metric_type' = 'integer',
                         'source_name' = list('integer', 'character')))
 
@@ -206,20 +209,24 @@ with_source_names.rsm <- function(.tbl) {
     by_source <- c('source_name' = 'source_name_str')
     reshape <- function(.tbl) .tbl %>%
       select(-metric_type) %>%
-      rename(metric_type = metric_type_str)
+      mutate(metric_type = tolower(metric_type_str)) %>%
+      select(-metric_type_str)
 
   } else {
     by_source <- c('source_name')
     reshape <- function(.tbl) .tbl %>%
       select(-metric_type, -source_name) %>%
-      rename(source_name = source_name_str, metric_type = metric_type_str)
+      mutate(
+        source_name = tolower(source_name_str),
+        metric_type = tolower(metric_type_str)
+      ) %>%
+      select(-source_name_str, -metric_type_str)
   }
   by_source <- c(by_source, 'metric_type')
 
   # FIXME well, we're copying the whole thing into memory. Ideally we should
   # not surprise the user with something like this.
   .tbl %>%
-    collect %>%
     inner_join(mapping_table(), by = by_source, suffix = c('', '.mtable')) %>%
     reshape() %>%
     select(-aggregation_function, -ends_with('.mtable'))
@@ -241,14 +248,17 @@ with_metric_types.rsm <- with_source_names.rsm
 diff_metrics <- function(.tbl) {
   check_in_memory(.tbl)
   check_columns(
-    .tbl, c('source_name' = 'character', 'metric_type' = 'character')
+    .tbl, list('source_name' = 'character',
+            'metric_type' = 'character',
+            'metric_date' = list('POSIXct', 'Date'))
   )
 
+  print('call')
   mappings <- mapping_table()
 
-  for (source_name in mappings$source_name_str) {
+  for (source_name in unique(mappings$source_name_str)) {
     cumulatives <- mappings %>%
-      filter(source_name_str == source_name,
+      filter(source_name_str == !!source_name,
              aggregation_function == 'last_value')
     if (!nrow(cumulatives)) {
       next
