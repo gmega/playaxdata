@@ -42,7 +42,10 @@ mapping_table <- function() {
   metric_type_mapping %>%
     inner_join(source_name_mapping,
                by = c('source_name' = 'raw_social_metrics_index'), suffix = c('', '.snm')) %>%
-    mutate(metric_type_str = unlist(playaxdata:::STANDARD_METRICS)[metric_type_to + 1]) %>%
+    mutate(
+      metric_type_str = unlist(playaxdata:::STANDARD_METRICS)[metric_type_to + 1],
+      source_name.snm = tolower(source_name.snm)
+    ) %>%
     rename(
       source_name_str = source_name.snm,
       metric_type = metric_type_from
@@ -199,10 +202,17 @@ with_source_names.rsm <- function(.tbl) {
 
   # It might be that the source name has been already patched into the table
   # by for_source. In this case, we have to join by the string name.
-  by_source = if (class(.tbl$source_name) == 'character') {
-    c('source_name' = 'source_name_str')
+  if (class(.tbl$source_name) == 'character') {
+    by_source <- c('source_name' = 'source_name_str')
+    reshape <- function(.tbl) .tbl %>%
+      select(-metric_type) %>%
+      rename(metric_type = metric_type_str)
+
   } else {
-    c('source_name')
+    by_source <- c('source_name')
+    reshape <- function(.tbl) .tbl %>%
+      select(-metric_type, -source_name) %>%
+      rename(source_name = source_name_str, metric_type = metric_type_str)
   }
   by_source <- c(by_source, 'metric_type')
 
@@ -210,9 +220,9 @@ with_source_names.rsm <- function(.tbl) {
   # not surprise the user with something like this.
   .tbl %>%
     collect %>%
-    inner_join(mapping_table(), by = by_source) %>%
-    select(-source_name, -metric_type, -aggregation_function) %>%
-    rename(source_name = source_name_str, metric_type = metric_type_str)
+    inner_join(mapping_table(), by = by_source, suffix = c('', '.mtable')) %>%
+    reshape() %>%
+    select(-aggregation_function, -ends_with('.mtable'))
 }
 
 #' @export
