@@ -53,20 +53,30 @@ mapping_table <- function() {
     select(-metric_type_to, -period_metrics_index)
 }
 
-# Raw social metrics come into a few flavors.
-
+#' `*_social_metrics` are a set of per-artist tables which store "raw", daily
+#' data from the various sources ingested by Playax. These are "raw" in the
+#' sense that no processing is done on the data, and it is stored as-is.
+#'
+#' The global, most commonly used table is `raw_social_metrics`. Regionalized
+#' variants are available under `state_social_metrics` (per-state
+#' metrics), `city_social_metrics` (per-city metrics) and `region_social_metrics`
+#' (per-region metrics).
+#'
 #' @export
 raw_social_metrics <- function() new_rsm(
   db_tbl('raw_social_metrics_cs'), 'source_name')
 
+#' @rdname raw_social_metrics
 #' @export
 city_social_metrics <- function() new_rsm(
   db_tbl('city_social_metrics'), 'source_name_idx')
 
+#' @rdname raw_social_metrics
 #' @export
 state_social_metrics <- function() new_rsm(
   db_tbl('state_social_metrics'), 'source_name_idx')
 
+#' @rdname raw_social_metrics
 #' @export
 region_social_metrics <- function() new_rsm(
   db_tbl('region_social_metrics'), 'source_name_idx')
@@ -74,7 +84,7 @@ region_social_metrics <- function() new_rsm(
 #' @export
 collect.rsm <- function(x, ...) mutate(
   new_rsm(NextMethod(), attributes(x)$source_name_idx),
-  metric_date = as.POSIXct(metric_date)) # freaking DBI bug
+  across(matches('metric_date'), ~as.POSIXct(.))) # freaking DBI bug
 
 new_rsm <- function(.tbl, source_name_idx) {
   class(.tbl) <- c('rsm', class(.tbl))
@@ -253,7 +263,6 @@ diff_metrics <- function(.tbl) {
             'metric_date' = list('POSIXct', 'Date'))
   )
 
-  print('call')
   mappings <- mapping_table()
 
   for (source_name in unique(mappings$source_name_str)) {

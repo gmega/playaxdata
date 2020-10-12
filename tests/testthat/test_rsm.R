@@ -94,3 +94,12 @@ test_that('diff_metrics diffs cumulative metrics for multiple right holders', {
   expect_equal(yt_43744, pull_values(43744))
   expect_equal(yt_508, pull_values(508))
 })
+
+test_that('supported_sources returns meaningful results', {
+  sources <- day_metrics() %>% supported_sources()
+  # There could be more sources, but we expect to see at least those.
+  expect_true(all(
+    c('spotify', 'youtube', 'knowledgegraph',
+      'facebook', 'deezer', 'instagram') %in% sources)
+  )
+})
