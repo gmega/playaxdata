@@ -3,7 +3,7 @@
 \docType{data}
 \name{metric_type_mapping}
 \alias{metric_type_mapping}
-\title{Mapping of source-specific metrics into \link{[standard metrics]{STANDARD_METRICS}}}
+\title{Mapping of source-specific metrics into \link[standard metrics]{STANDARD_METRICS}}
 \format{
 An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) with 13 rows and 4 columns.
 }
@@ -12,7 +12,7 @@ metric_type_mapping
 }
 \description{
 This table is extracted as-is from the Playax database and maps source-specific
-metric types (`metric_type_from` column) into \link{[standard metric]{STANDARD_METRICS}}
+metric types (`metric_type_from` column) into \link[standard metric]{STANDARD_METRICS}
 indices (`metric_type_to` column). A third column, `aggregation_function`,
 describes whether the metric is cumulative or not.
 }
