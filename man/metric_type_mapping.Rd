@@ -11,6 +11,9 @@ An object of class \code{tbl_df} (inherits from \code{tbl}, \code{data.frame}) w
 metric_type_mapping
 }
 \description{
-
+This table is extracted as-is from the Playax database and maps source-specific
+metric types (`metric_type_from` column) into \link{[standard metric]{STANDARD_METRICS}}
+indices (`metric_type_to` column). A third column, `aggregation_function`,
+describes whether the metric is cumulative or not.
 }
 \keyword{datasets}
