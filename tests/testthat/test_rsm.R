@@ -99,7 +99,23 @@ test_that('supported_sources returns meaningful results', {
   sources <- day_metrics() %>% supported_sources()
   # There could be more sources, but we expect to see at least those.
   expect_true(all(
-    c('spotify', 'youtube', 'knowledgegraph',
-      'facebook', 'deezer', 'instagram') %in% sources)
+    c('deezer', 'facebook', 'instagram', 'napster',
+      'shazam', 'spotify', 'twitter', 'youtube') %in% sources)
   )
+})
+
+test_that('supported_source actually uses the underlying table', {
+  sources <- raw_social_metrics() %>%
+    for_right_holder('Barões da Pisadinha') %>%
+    for_dates('2019-01-01', '2019-01-01') %>%
+    supported_sources
+
+  expect_equal(sources, 'spotify')
+
+  sources <- raw_social_metrics() %>%
+    for_right_holder('Barões da Pisadinha') %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    supported_sources
+
+  expect_equal(sources, c('deezer', 'spotify', 'twitter'))
 })

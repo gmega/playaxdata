@@ -101,7 +101,7 @@ supported_metric_types_.rsm <- function(.tbl, source, metric_type) {
 
 #' @export
 supported_sources.rsm <- function(.tbl) {
-  source_indices <- raw_social_metrics() %>%
+  source_indices <- .tbl %>%
     select(source_name) %>%
     distinct %>%
     collect %>%
