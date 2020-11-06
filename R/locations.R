@@ -1,6 +1,11 @@
 # From https://github.com/playax/playax/blob/master/app/models/concerns/geopolitical_location.rb
 LOCATION_TYPES <- c('city', 'state', 'region', 'country')
 
+#' @export
+location_table <- function() {
+
+}
+
 resolve_location <- function(...) {
   location_spec <- list(...)
   for (scope in LOCATION_TYPES) {

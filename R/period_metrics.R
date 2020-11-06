@@ -130,3 +130,27 @@ supported_metric_types_.period_metrics <- function(.tbl, source) {
 
   STANDARD_METRICS[indices[indices < n_metrics] + 1]
 }
+
+#' @export
+with_source_names.period_metrics <- function(.tbl) {
+  check_in_memory(.tbl)
+  check_columns(.tbl, list('source_type' = 'integer'))
+  .tbl %>%
+    left_join(source_name_mapping %>%
+                select(source_type_str = source_name,
+                       source_type = period_metrics_index),
+              by = 'source_type') %>% select(-source_type) %>%
+    rename(source_type = source_type_str)
+}
+
+#' @export
+with_metric_types.period_metrics <- function(.tbl) {
+  check_in_memory(.tbl)
+  check_columns(.tbl, list('metric_type' = 'integer'))
+  .tbl %>%
+    mutate(metric_type = if_else(
+      metric_type <= length(STANDARD_METRICS),
+      unname(unlist(STANDARD_METRICS[metric_type + 1])),
+      NA_character_)
+    )
+}
