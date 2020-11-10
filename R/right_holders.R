@@ -1,5 +1,11 @@
 .globals$rh_cache <- list()
 
+#' Returns the table of all right holders, with information such
+#' as their name, genre, and language.
+#'
+#' @export
+right_holders <- function() db_tbl('right_holders')
+
 #' Enriches the current table with right holder information. By default,
 #' drops all rows that cannot be matched to any right holder, or which are
 #' associated to invalid right holders.
@@ -34,7 +40,7 @@ with_right_holders_.default <- function(.tbl, drop_invalid = TRUE) {
 
   .tbl <- .tbl %>%
     join_mode(drop_invalid)(
-      db_tbl('right_holders'),
+      right_holders(),
       by = c('right_holder_id' = 'id'),
       suffix = c('', '.rhs')
     )
@@ -42,7 +48,9 @@ with_right_holders_.default <- function(.tbl, drop_invalid = TRUE) {
   if (!drop_invalid) .tbl else .tbl %>% filter(is.null(group_id))
 }
 
-
+#' Enriches a table containing right holder information column with root
+#' genres, placed under a `root_genre` column.
+#'
 #' @export
 with_genres <- function(.tbl) {
   .tbl %>%
@@ -50,9 +58,20 @@ with_genres <- function(.tbl) {
     left_join(db_tbl('genres'), by = 'genre')
 }
 
+#' Enriches a table containing right holder information with a "language"
+#' column, representing the artist's main language.
+#'
 #' @export
 with_language <- function(.tbl) with_right_holders(.tbl, 'language')
 
+#' Enriches a table containing right holder information with associated
+#' pseudonyms.
+#'
+#' @param main for right holders having more than one pseudonym, returns
+#' only the one registered as its "main" pseudonym, if any. Note that data
+#' errors mean that it may happen that an artist has multiple "main"
+#' pseudonyms.
+#'
 #' @export
 with_pseudos <- function(.tbl, main = TRUE) {
   .tbl <- ensure_right_holders(.tbl) %>%

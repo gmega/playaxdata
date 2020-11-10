@@ -1,4 +1,4 @@
-context('raw_social_metrics')
+context('period_metrics')
 
 rh_name <- 'Marília Mendonça'
 

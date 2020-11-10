@@ -1,4 +1,5 @@
 .globals$mariadb_version <- list()
+.globals$enabled_bugs <- list()
 
 BUGS <- list(
   COLUMNSTORE_IN_BUG = list(
@@ -14,6 +15,14 @@ has_bug <- function(bug_id) {
   if (is.null(fix_version)) {
     stop(glue::glue('Unknown bug {bug_id}.'))
   }
+
+  # Bug may have been force-enabled/disabled by test code.
+  if (force_enabled(bug_id)) {
+    return(TRUE)
+  } else if (force_disabled(bug_id)) {
+    return(FALSE)
+  }
+
   version <- mariadb_version()
   for (part in c('major', 'minor', 'maintenance')) {
     if (version[[part]] > fix_version[[part]]) {
@@ -42,4 +51,44 @@ mariadb_version <- function() {
   }
 
   return(version)
+}
+
+#' An alternative to the dbplyr %in% filter which will build a where expression
+#' for versions of ColumnStore which cannot properly evaluate the IN operator.
+#'
+#' @export
+in_filter <- function(.tbl, column, value_list) {
+  value_list <- value_list # triggers evaluation
+  if (has_bug('COLUMNSTORE_IN_BUG')) {
+    expr <- eval(substitute(make_where_expression(column, value_list)))
+    .tbl %>% filter(!!expr)
+  } else {
+    expr <- substitute(column %in% value_list)
+    .tbl %>% filter(!!expr)
+  }
+}
+
+force_bug <- function(bug_id, status = TRUE) {
+  .globals$enabled_bugs[[bug_id]] <- status
+}
+
+force_enabled <- function(bug_id) {
+  bug_id %in% names(.globals$enabled_bugs) &&
+    .globals$enabled_bugs[[bug_id]] == TRUE
+}
+
+force_disabled <- function(bug_id) {
+  bug_id %in% names(.globals$enabled_bugs) &&
+    .globals$enabled_bugs[[bug_id]] == FALSE
+}
+
+make_where_expression <- function(column_sym, value_list) {
+  value <- value_list[1]
+  expr <- substitute(column_sym == value)
+  if (length(value_list) > 1) {
+    expr <- call('|', expr,
+                 eval(substitute(
+                   make_where_expression(column_sym, value_list[-1]))))
+  }
+  expr
 }
