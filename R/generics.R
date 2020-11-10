@@ -36,16 +36,7 @@ for_right_holder_.default <- function(.tbl, ..., .dots = NULL) {
   }
 
   right_holder_ids <- get_parlist(..., .dots = .dots)
-
-  if (has_bug('COLUMNSTORE_IN_BUG')) {
-    if (length(right_holder_ids) > 1) {
-      stop(paste0('A ColumnStore bug prevents filtering by more than ',
-           'one right_holder in this version of ColumnStore.'))
-    }
-    .tbl %>% filter(right_holder_id == !!right_holder_ids)
-  } else {
-    .tbl %>% filter(right_holder_id %in% !!right_holder_ids)
-  }
+  .tbl %>% in_filter(right_holder_id, right_holder_ids)
 }
 
 #' The smallest possible date

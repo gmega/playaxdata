@@ -36,3 +36,16 @@ test_that('with_metric_types attaches source types', {
 
   expect_true(all(metrics$metric_type %in% unname(unlist(STANDARD_METRICS))))
 })
+
+test_that('multiple right holder queries work', {
+  rhids <- week_metrics() %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_right_holder('Marília Mendonça', 'Barões da Pisadinha') %>%
+    pull(right_holder_id) %>%
+    unique %>%
+    sort
+
+  expected_rhids <- c(43744, 668344)
+
+  expect_equal(rhids, expected_rhids)
+})

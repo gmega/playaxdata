@@ -119,3 +119,20 @@ test_that('supported_source actually uses the underlying table', {
 
   expect_equal(sources, c('deezer', 'spotify', 'twitter'))
 })
+
+test_that('metric type selection works without source', {
+  metrics <- day_metrics() %>%
+    for_right_holder(rh_name) %>%
+    for_metric_type('plays') %>%
+    for_dates('2020-05-01', '2020-05-01') %>%
+    collect
+
+  plays <- item_index(playaxdata:::STANDARD_METRICS, 'plays')
+  play_types <- playaxdata:::mapping_table() %>%
+    filter(metric_type_str == 'plays') %>%
+    pull(metric_type) %>%
+    unique %>%
+    sort
+
+  expect_equal(sort(unique(metrics$metric_type)), play_types)
+})

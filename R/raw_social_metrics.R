@@ -145,16 +145,7 @@ for_metric_type.rsm <- function(.tbl, metric_type, add_metric_types = FALSE) {
     resolve_ns(.tbl, metric_type)
   }
 
-  .tbl <- if (length(metric_index) > 1) {
-    if (has_bug('COLUMNSTORE_IN_BUG')) {
-      # TODO implement OR alternative.
-      stop(paste('Cannot select multiple metric indices in this version',
-           'of columnstore. Please select a source first with for_source.'))
-    }
-    .tbl %>% filter(metric_type %in% metric_index)
-  } else {
-    .tbl %>% filter(metric_type == metric_index)
-  }
+  .tbl <- .tbl %>% in_filter(metric_type, metric_index)
 
   if (add_metric_types) .tbl %>% mutate(metric_type = !!metric_type) else .tbl
 }
