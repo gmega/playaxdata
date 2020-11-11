@@ -32,6 +32,12 @@ collect.month_metrics <- function(x, ...) new_month_metrics(NextMethod())
 #' @export
 collect.year_metrics <- function(x, ...) new_year_metrics(NextMethod())
 
+#' @export
+collect.period_metrics <- function(x, ...) mutate(
+  NextMethod(),
+  date = as.Date(date) # freaking DBI bug
+)
+
 new_week_metrics <- function(.tbl) {
   class(.tbl) <- c('week_metrics', 'period_metrics', class(.tbl))
   .tbl

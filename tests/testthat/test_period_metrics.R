@@ -49,3 +49,20 @@ test_that('multiple right holder queries work', {
 
   expect_equal(rhids, expected_rhids)
 })
+
+test_that('date column is of Date type', {
+  weeks <- week_metrics() %>%
+    head(10) %>%
+    collect %>%
+    pull(date)
+
+  expect_s3_class(weeks, 'Date')
+
+  months <- month_metrics() %>%
+    head(10) %>%
+    collect %>%
+    pull(date)
+
+
+  expect_s3_class(months, 'Date')
+})

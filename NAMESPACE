@@ -2,6 +2,7 @@
 
 S3method(aggregate,web_metrics)
 S3method(collect,month_metrics)
+S3method(collect,period_metrics)
 S3method(collect,rsm)
 S3method(collect,web_metrics)
 S3method(collect,week_metrics)
