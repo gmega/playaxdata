@@ -37,6 +37,17 @@ test_that('with_metric_types attaches source types', {
   expect_true(all(metrics$metric_type %in% unname(unlist(STANDARD_METRICS))))
 })
 
+test_that('collect.period_metrics does not attempt to
+          convert dates when column is absent', {
+  rhid <- week_metrics() %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_right_holder('Marília Mendonça') %>%
+    pull(right_holder_id) %>%
+    unique
+
+  expect_equal(rhid, find_right_holder(rh_name))
+})
+
 test_that('multiple right holder queries work', {
   rhids <- week_metrics() %>%
     for_dates('2020-01-01', '2020-01-01') %>%
@@ -65,4 +76,18 @@ test_that('date column is of Date type', {
 
 
   expect_s3_class(months, 'Date')
+})
+
+test_that('multiple metric type filters work', {
+  metrics <- week_metrics() %>%
+    for_right_holder(rh_name) %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_metric_type('plays', 'followers') %>%
+    collect %>%
+    with_metric_types()
+
+  expect_equal(
+    metrics %>% pull(metric_type) %>% unique %>% sort,
+    c('followers', 'plays')
+  )
 })

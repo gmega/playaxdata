@@ -4,7 +4,7 @@
 \alias{for_metric_type}
 \title{Filters a given table by metric type}
 \usage{
-for_metric_type(.tbl, metric_type, add_metric_types = TRUE)
+for_metric_type(.tbl, ..., .dots = NULL)
 }
 \description{
 Supported metric types depend on the table and, for some tables, may also
