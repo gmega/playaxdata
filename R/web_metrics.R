@@ -15,20 +15,27 @@ SOURCE_NAMES <- l(
   'LinkfireCount'     = 12
 )
 
-METRIC_TYPES <- l(
-  'plays'     = 0,
-  'listeners' = 1
-)
-
 #' @export
 web_metrics <- function(with_right_holders = FALSE) {
   # Due to limitations with ColumnStore, we cannot use with_right_holders as
   # an enrichment. We have to build the query by hand, right from the start.
   tbl <- if (!with_right_holders) {
-    db_tbl('web_metrics')
+    db_tbl('web_metrics') %>%
+      select(-end) %>%
+      rename(metric_date = start)
   } else {
     db_tbl_sql(
-      'SELECT wm.*,
+      'SELECT
+         wm.id AS id,
+         wm.track_id,
+         wm.web_count_id,
+         wm.source_name,
+         wm.start AS metric_date,
+         wm.feature_type,
+         wm.feature_value,
+         wm.metric_type,
+         wm.metric_value,
+         wm.created_at,
          rh.id AS right_holder_id,
          rh.name,
          rh.genre,
@@ -58,11 +65,6 @@ web_metric_source <- function(name) {
 }
 
 #' @export
-web_metric_type <- function(name) {
-  METRIC_TYPES[[tolower(name)]]
-}
-
-#' @export
 as.web_metrics <- function(.tbl) {
   class(.tbl) <- c('web_metrics', class(.tbl))
   .tbl
@@ -80,22 +82,26 @@ for_source.web_metrics <- function(.tbl, source_name) {
 }
 
 #' @export
-for_metric_type.web_metrics <- function(.tbl, metric_type) {
-  .tbl %>% filter(metric_type == !!web_metric_type(metric_type))
+for_metric_type.web_metrics <- function(.tbl, ..., .dots = NULL) {
+  metric_types <- get_parlist(..., .dots = .dots)
+  metric_indices <- match_metrics(metric_types)
+  .tbl %>% in_filter(metric_type, metric_indices)
 }
 
 #' @export
 for_dates_.web_metrics <- function(.tbl, start, end) {
-  .tbl %>% filter(!!start <= start && start <= !!end)
+  .tbl %>% filter(!!start <= metric_date && metric_date <= !!end)
 }
 
 #' @export
 aggregate.web_metrics <- function(.tbl) {
+  # FIXME this whole method is pretty horrible. We should probably fold this
+  # processing into a collect for web_metrics.
   check_in_memory(.tbl)
   new_web_metrics(
     .tbl %>%
-      mutate(date = parse_date_time(end, 'Y!-m!*-d! H!:M!:S!')) %>%
-      select(-id, -web_count_id, -start, -end, -created_at) %>%
+      mutate(metric_date = parse_date_time(metric_date, 'Y!-m!*-d! H!:M!:S!')) %>%
+      select(-id, -web_count_id, -created_at) %>%
       group_by_at(vars(-contains('metric_value'))) %>%
       summarise(metric_value = sum(metric_value, na.rm = TRUE)) %>%
       ungroup()
