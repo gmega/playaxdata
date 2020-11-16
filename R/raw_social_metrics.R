@@ -138,16 +138,18 @@ for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
 }
 
 #' @export
-for_metric_type.rsm <- function(.tbl, metric_type, add_metric_types = FALSE) {
+for_metric_type.rsm <- function(.tbl, ..., .dots = NULL) {
+  metric_type <- get_parlist(..., .dots = NULL)
+  stopifnot("raw_social_metrics does not support selection of multiple metric types"=
+            length(metric_type) == 1)
+
   metric_index <- if (metric_type %in% STANDARD_METRICS) {
     resolve_sd(.tbl, metric_type)
   } else {
     resolve_ns(.tbl, metric_type)
   }
 
-  .tbl <- .tbl %>% in_filter(metric_type, metric_index)
-
-  if (add_metric_types) .tbl %>% mutate(metric_type = !!metric_type) else .tbl
+  .tbl %>% in_filter(metric_type, metric_index)
 }
 
 resolve_sd <- function(.tbl, metric_type) {
