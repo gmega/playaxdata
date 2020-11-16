@@ -100,12 +100,12 @@ for_source.period_metrics <- function(.tbl, source_name) {
 #' @export
 for_metric_type.period_metrics <- function(.tbl, ..., .dots = NULL) {
   metric_types <- get_parlist(..., .dots = .dots)
-  metric_indices <- unname(which(STANDARD_METRICS %in% tolower(metric_types)))
+  metric_indices <- match_metrics(metric_types)
   if (length(metric_indices) == 0) {
     stop(glue::glue('Unknown metric type(s) {metric_types}.'))
   }
 
-  .tbl %>% in_filter(metric_type, metric_indices - 1)
+  .tbl %>% in_filter(metric_type, metric_indices)
 }
 
 #' @export

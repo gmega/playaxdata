@@ -25,6 +25,7 @@ Collate:
     'raw_social_metrics.R'
     'period_metrics.R'
     'right_holders.R'
+    'standard_metrics.R'
     'test_helpers.R'
     'tracks.R'
     'web_metrics.R'
