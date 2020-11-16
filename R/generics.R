@@ -69,34 +69,6 @@ for_source <- function(.tbl, source_name, add_source_names = TRUE) {
   UseMethod('for_source')
 }
 
-#' Standard metric types
-#'
-#' When supported, standard metrics have a well-defined semantics. Usually
-#' used with \code{\link{for_metric_type}}.
-#'
-#' Taken from \link{https://github.com/playax/playax/blob/master/app/models/concerns/period_metric.rb}.
-#'
-STANDARD_METRICS <- list(
-  plays = 'plays',
-  followers = 'followers',
-  active_audience = 'active_audience',
-  playax = 'playax',
-  internet = 'internet',
-  streaming = 'streaming',
-  social = 'social',
-  pageviews = 'pageviews',
-  visitors = 'visitors',
-  engagers = 'engagers',
-  click_throughs = 'click_throughs',
-  unique_click_throughs = 'unique_click_throughs',
-  unique_preview_clicks = 'unique_preview_clicks',
-  unique_bounces = 'unique_bounces',
-  unique_click_through_rate = 'unique_click_through_rate',
-  plays_28 = 'plays_28',
-  viewer_percentage = 'viewer_percentage',
-  plays_percentage = 'plays_percentage'
-)
-
 #' Filters a given table by metric type
 #'
 #' Supported metric types depend on the table and, for some tables, may also
