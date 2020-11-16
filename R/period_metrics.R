@@ -35,7 +35,7 @@ collect.year_metrics <- function(x, ...) new_year_metrics(NextMethod())
 #' @export
 collect.period_metrics <- function(x, ...) mutate(
   NextMethod(),
-  date = as.Date(date) # freaking DBI bug
+  across(matches('date'), ~as.Date(.)) # freaking DBI bug
 )
 
 new_week_metrics <- function(.tbl) {
@@ -98,14 +98,14 @@ for_source.period_metrics <- function(.tbl, source_name) {
 }
 
 #' @export
-for_metric_type.period_metrics <- function(.tbl, metric_type) {
-  metric_index <- unname(which(STANDARD_METRICS == tolower(metric_type)))
-  if (length(metric_index) == 0) {
-    stop(glue::glue('Unknown metric type {metric_type}.'))
+for_metric_type.period_metrics <- function(.tbl, ..., .dots = NULL) {
+  metric_types <- get_parlist(..., .dots = .dots)
+  metric_indices <- unname(which(STANDARD_METRICS %in% tolower(metric_types)))
+  if (length(metric_indices) == 0) {
+    stop(glue::glue('Unknown metric type(s) {metric_types}.'))
   }
-  .tbl %>%
-    filter(metric_type == !!(metric_index - 1)) %>%
-    mutate(metric_type = !!tolower(metric_type))
+
+  .tbl %>% in_filter(metric_type, metric_indices - 1)
 }
 
 #' @export
