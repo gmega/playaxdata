@@ -83,7 +83,18 @@ STANDARD_METRICS <- list(
   playax = 'playax',
   internet = 'internet',
   streaming = 'streaming',
-  social = 'social'
+  social = 'social',
+  pageviews = 'pageviews',
+  visitors = 'visitors',
+  engagers = 'engagers',
+  click_throughs = 'click_throughs',
+  unique_click_throughs = 'unique_click_throughs',
+  unique_preview_clicks = 'unique_preview_clicks',
+  unique_bounces = 'unique_bounces',
+  unique_click_through_rate = 'unique_click_through_rate',
+  plays_28 = 'plays_28',
+  viewer_percentage = 'viewer_percentage',
+  plays_percentage = 'plays_percentage'
 )
 
 #' Filters a given table by metric type
@@ -96,7 +107,7 @@ STANDARD_METRICS <- list(
 #' @seealso supported_metric_types
 #'
 #' @export
-for_metric_type <- function(.tbl, metric_type, add_metric_types = TRUE) {
+for_metric_type <- function(.tbl, ..., .dots = NULL) {
   UseMethod('for_metric_type')
 }
 
