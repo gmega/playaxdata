@@ -4,7 +4,7 @@
 \alias{for_source}
 \title{Filters a given table by source (e.g. `youtube`, or `spotify`)}
 \usage{
-for_source(.tbl, source_name, add_source_names = TRUE)
+for_source(.tbl, ..., .dots = NULL)
 }
 \description{
 Valid source names depend on the actual source. Use \code{\link{supported_sources}}

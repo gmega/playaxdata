@@ -1,11 +1,44 @@
-table_entry <- function(.tbl, value, col, label = NULL) {
-  label <- if (is.null(label)) deparse(substitute(col)) else label
-  value <- value # Trigger evaluation
-  fexpr <- substitute(tolower(col) == tolower(value))
+
+#' get_keys is a specialized filter operation with additional checks. Given
+#' a table, a set of keys and a key column, get_keys will keep lines in which
+#' keys correspond to values in the key column, and check that:
+#'
+#'  1. no values are missing;
+#'  2. there is only one row per key (optional).
+#'
+#' Keys are assumed to be strings, and are case-insensitive.
+#'
+get_keys <- function(.tbl, keys, key_col, unique = FALSE) {
+  key_col_sym <- substitute(key_col)
+
+  result <- lapply(
+    keys,
+    function(key) {
+      key <- key # triggers evaluation
+      key_col_sym <- key_col_sym # brings into inner scope for substitute
+      eval(substitute(get_key(.tbl, key, key_col_sym)))
+    }
+  )
+
+  result <- do.call(rbind, result)
+
+  if (unique) {
+    key_col_name <- deparse(substitute(key_col))
+    if (length(result[[key_col_name]]) > length(keys)) {
+      stop('Table contains multiple occurrences of one or more keys.')
+    }
+  }
+
+  result
+}
+
+get_key <- function(.tbl, key, key_col) {
+  key_col_name <- deparse(substitute(key_col))
+  fexpr <- substitute(tolower(key_col) == tolower(key))
   entry <- .tbl %>% filter(!!fexpr)
 
   if (nrow(entry) == 0) {
-    stop(glue::glue('Invalid {label} {value}.'))
+    stop(glue::glue('Invalid {key_col_name}: {key}'))
   }
 
   entry
@@ -68,3 +101,16 @@ col_classes <- function(.tbl) {
 
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join
 
+
+f1 <- function(a, vals) {
+  xsym <- substitute(a)
+  lapply(
+    vals,
+    function(x) { xi <- x; xsym <- xsym; eval(substitute(f2(xsym, xi))) }
+  )
+}
+
+f2 <- function(s, val) {
+  a <- deparse(substitute(s))
+  paste(a, '-', val)
+}

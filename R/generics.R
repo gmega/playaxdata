@@ -65,7 +65,7 @@ for_dates_ <- function(.tbl, start, end) UseMethod('for_dates_')
 #' to find out which ones are supported.
 #'
 #' @export
-for_source <- function(.tbl, source_name, add_source_names = TRUE) {
+for_source <- function(.tbl, ..., .dots = NULL) {
   UseMethod('for_source')
 }
 

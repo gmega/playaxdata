@@ -38,7 +38,8 @@ MAPPINGS <- l(
   )
 )
 
-mapping_table <- function() {
+# Mapping of standard metrics into rsm metrics.
+std_metrics <- function() {
   metric_type_mapping %>%
     inner_join(source_name_mapping,
                by = c('source_name' = 'raw_social_metrics_index'), suffix = c('', '.snm')) %>%
@@ -51,6 +52,37 @@ mapping_table <- function() {
       metric_type = metric_type_from
     ) %>%
     select(-metric_type_to, -period_metrics_index)
+}
+
+# Mapping of non-standard metrics.
+ns_metrics <- function() {
+  lapply(
+    names(MAPPINGS),
+    function(source_name_str) {
+      metrics <- playaxdata:::MAPPINGS[[source_name_str]]
+      tibble(source_name = source_indices(source_name_str),
+             source_name_str = source_name_str,
+             metric_type = unname(unlist(metrics)),
+             metric_type_str = names(metrics))
+    }
+  ) %>% {
+    do.call(rbind, .)
+  }
+}
+
+# All metrics in one table.
+rsm_metrics <- function() {
+  ns <- ns_metrics() %>% rename(non_standard_name = metric_type_str)
+  std <- std_metrics() %>% rename(standard_name = metric_type_str)
+
+  std %>%
+    left_join(ns %>% select(-source_name_str),
+              by = c('source_name', 'metric_type')) %>%
+    rbind(
+      ns %>%
+        anti_join(std, by = c('source_name', 'metric_type')) %>%
+        mutate(standard_name = NA, aggregation_function = NA)
+    )
 }
 
 #' `*_social_metrics` are a set of per-artist tables which store "raw", daily
@@ -122,66 +154,62 @@ for_right_holder_.rsm <- function(.tbl, ..., .dots = NULL) {
 }
 
 #' @export
-for_source.rsm <- function(.tbl, source_name, add_source_names = TRUE) {
-  source_name <- tolower(source_name)
-  src_index <- source_index(source_name)
-  if (src_index == -1) {
-    stop('Unknown source name {source_name}')
-  }
+for_source.rsm <- function(.tbl, ..., .dots = NULL) {
+  source_names <- tolower(get_parlist(..., .dots = NULL))
+  src_indices <- source_indices(source_names)
 
-  attributes(.tbl)$selected_source <- source_name
+  attributes(.tbl)$selected_sources <- src_indices
+
   source_name_idx <- as.symbol(attributes(.tbl)$source_name_idx)
 
-  .tbl <- .tbl %>% filter(!!source_name_idx == !!src_index)
-
-  if (add_source_names) .tbl %>% mutate(source_name = !!source_name) else .tbl
+  eval(substitute(in_filter(.tbl, source_name_idx, src_indices)))
 }
 
 #' @export
 for_metric_type.rsm <- function(.tbl, ..., .dots = NULL) {
-  metric_type <- get_parlist(..., .dots = NULL)
-  stopifnot("raw_social_metrics does not support selection of multiple metric types"=
-            length(metric_type) == 1)
+  metric_types <- get_parlist(..., .dots = NULL)
 
-  metric_index <- if (metric_type %in% STANDARD_METRICS) {
-    resolve_sd(.tbl, metric_type)
-  } else {
-    resolve_ns(.tbl, metric_type)
+  # Preselected sources are a problem. They've already
+  # inserted filters into the query, and we'll generate redundant
+  # clauses here. Yet, I don't know of a better way to do this
+  # which does not imply lazy query generation, which has its
+  # own set of nasty problems.
+
+  # Do we have sources pre-selected?
+  sources <- attributes(.tbl)$selected_sources
+  if (is.null(sources)) {
+    # We don't. Reverse select sources based on metric type.
+    sources <- reverse_select(metric_types)
   }
 
-  .tbl %>% in_filter(metric_type, metric_index)
+  # Retrieves unanbiguous source_name, metric_type pairs.
+  pairs <- rsm_metrics() %>%
+    filter(source_name %in% sources,
+           (standard_name %in% tolower(metric_types)) |
+             (non_standard_name %in% tolower(metric_types)))
+
+  # Generates where clauses and runs the query.
+  .tbl %>% filter(!!generate_clauses(pairs$source_name, pairs$metric_type))
 }
 
-resolve_sd <- function(.tbl, metric_type) {
-  metric_table <- mapping_table()
-
-  # Because of the COLUMNSTORE_IN_BUG we have to actually attempt to
-  # narrow down metric types to a single index when possible.
-  source_name <- attributes(.tbl)$selected_source
-  if (!is.null(source_name)) {
-    metric_table <- table_entry(
-      metric_table, source_name, source_name_str, 'source'
-    )
-  }
-
-  unique(table_entry(metric_table, metric_type,
-              metric_type_str, 'metric type')$metric_type)
+# Reverse-selects sources from metric types.
+reverse_select <- function(metric_types) {
+  rsm_metrics() %>%
+    filter((standard_name %in% tolower(metric_types)) |
+            (non_standard_name %in% tolower(metric_types))) %>%
+    pull(source_name) %>%
+    unique
 }
 
-resolve_ns <- function(.tbl, metric_type) {
-  source_name <- attributes(.tbl)$selected_source
+generate_clauses <- function(sources, metric_types, i = 1) {
+  source <- sources[i]
+  type <- metric_types[i]
 
-  if (!is.null(source_name)) {
-    stop('Non-standard metric types require a',
-         ' source to be selected first with `for_source`.',
-         'Check that you\'ve typed your metric type right.')
+  expr <- substitute((source_name == source & metric_type == type))
+  if (i < length(sources) & i < length(metric_types)) {
+    expr <- call('|', expr, generate_clauses(sources, metric_types, i + 1))
   }
-
-  type_index <- MAPPINGS[[source_name]][[metric_type]]
-  if (is.null(type_index)) {
-    stop(glue::glue('Unknown metric type {metric_type} for {source_name}.'))
-  }
-  type_index
+  expr
 }
 
 #' @export
@@ -204,35 +232,20 @@ with_source_names.rsm <- function(.tbl) {
   # We can only do this to in-memory tables.
   check_in_memory(.tbl)
   check_columns(.tbl, list('metric_type' = 'integer',
-                        'source_name' = list('integer', 'character')))
+                           'source_name' = 'integer'))
 
-  # It might be that the source name has been already patched into the table
-  # by for_source. In this case, we have to join by the string name.
-  if (class(.tbl$source_name) == 'character') {
-    by_source <- c('source_name' = 'source_name_str')
-    reshape <- function(.tbl) .tbl %>%
-      select(-metric_type) %>%
-      mutate(metric_type = tolower(metric_type_str)) %>%
-      select(-metric_type_str)
-
-  } else {
-    by_source <- c('source_name')
-    reshape <- function(.tbl) .tbl %>%
-      select(-metric_type, -source_name) %>%
-      mutate(
-        source_name = tolower(source_name_str),
-        metric_type = tolower(metric_type_str)
-      ) %>%
-      select(-source_name_str, -metric_type_str)
-  }
-  by_source <- c(by_source, 'metric_type')
-
-  # FIXME well, we're copying the whole thing into memory. Ideally we should
-  # not surprise the user with something like this.
   .tbl %>%
-    inner_join(mapping_table(), by = by_source, suffix = c('', '.mtable')) %>%
-    reshape() %>%
-    select(-aggregation_function, -ends_with('.mtable'))
+    left_join(
+      rsm_metrics() %>%
+        mutate(metric_type_str = coalesce(standard_name, non_standard_name)) %>%
+        select(metric_type, source_name, metric_type_str, source_name_str),
+      by = c('source_name', 'metric_type')
+    ) %>%
+    select(-source_name, -metric_type) %>%
+    rename(
+      source_name = source_name_str,
+      metric_type = metric_type_str
+    )
 }
 
 #' @export
@@ -256,7 +269,7 @@ diff_metrics <- function(.tbl) {
             'metric_date' = list('POSIXct', 'Date'))
   )
 
-  mappings <- mapping_table()
+  mappings <- std_metrics()
 
   for (source_name in unique(mappings$source_name_str)) {
     cumulatives <- mappings %>%
@@ -286,9 +299,9 @@ diff_metric <- function(.tbl, source_name, metric_type) {
     )
 }
 
-source_index <- function(source_name) {
+source_indices <- function(source_names) {
   source_name_mapping %>%
-    table_entry(source_name, source_name) %>%
+    get_keys(source_names, source_name, unique = TRUE) %>%
     pull(raw_social_metrics_index)
 }
 

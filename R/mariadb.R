@@ -60,6 +60,7 @@ mariadb_version <- function() {
 in_filter <- function(.tbl, column, value_list) {
   value_list <- value_list # triggers evaluation
   if (has_bug('COLUMNSTORE_IN_BUG')) {
+    # TODO migrate in_filter to tidyeval
     expr <- eval(substitute(make_where_expression(column, value_list)))
     .tbl %>% filter(!!expr)
   } else {

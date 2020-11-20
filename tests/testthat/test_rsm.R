@@ -25,25 +25,21 @@ test_that('metric name resolution works', {
     collect %>%
     arrange(id)
 
-  # with_source_names will only preserve (source_name, metric_type) pairs
-  # it can map. So we have to drop everything that is unmappable from our
-  # expected results.
-  expected_indices <- metrics %>%
-    inner_join(metric_type_mapping %>%
-                 select(source_name, metric_type = metric_type_from),
+  expected_names <- metrics %>%
+    left_join(playaxdata:::rsm_metrics() %>%
+                mutate(metric_name =
+                         coalesce(standard_name, non_standard_name)) %>%
+                select(source_name, metric_type, source_name_str),
                by = c('source_name', 'metric_type')) %>%
-    pull(source_name)
-
-  # now, fetch expected names from source_name_mapping
-  expected_names <- sapply(expected_indices, function(i)
-    source_name_mapping %>%
-      filter(raw_social_metrics_index == i) %>%
-      pull(source_name) %>%
-      tolower
-  )
+    arrange(id) %>%
+    pull(source_name_str) %>%
+    unname
 
   expect_equal(
-    metrics %>% with_source_names() %>% arrange(id) %>% pull(source_name),
+    metrics %>%
+      with_source_names() %>%
+      arrange(id) %>%
+      pull(source_name),
     expected_names
   )
 })
@@ -128,11 +124,52 @@ test_that('metric type selection works without source', {
     collect
 
   plays <- item_index(playaxdata:::STANDARD_METRICS, 'plays')
-  play_types <- playaxdata:::mapping_table() %>%
+  play_types <- playaxdata:::std_metrics() %>%
     filter(metric_type_str == 'plays') %>%
     pull(metric_type) %>%
     unique %>%
     sort
 
   expect_equal(sort(unique(metrics$metric_type)), play_types)
+})
+
+test_that('metric type selection does not scoop unintended metrics', {
+  metrics <- day_metrics() %>%
+    for_right_holder(rh_name) %>%
+    for_metric_type('plays') %>%
+    for_dates('2020-05-01', '2020-05-01') %>%
+    collect
+
+  play_indices <- playaxdata:::std_metrics() %>%
+    filter(metric_type_str == 'plays') %>%
+    pull(metric_type) %>%
+    unique
+
+  ambiguous <- playaxdata:::std_metrics() %>%
+    filter(metric_type %in% play_indices, metric_type_str != 'plays') %>%
+    head(1)
+
+  # Should have at least one ambiguous metric.
+  expect_true(nrow(ambiguous) >= 1)
+
+  wrong_fetches <- metrics %>%
+    filter(metric_type == ambiguous$metric_type,
+           source_name == ambiguous$source_name) %>%
+    nrow
+
+  expect_equal(wrong_fetches, 0)
+})
+
+test_that('multiple source selection works', {
+  sources <- day_metrics() %>%
+    for_source('facebook', 'knowledgegraph') %>%
+    for_right_holder(rh_name) %>%
+    for_dates('2020-05-01', '2020-05-01') %>%
+    collect %>%
+    with_source_names() %>%
+    pull(source_name) %>%
+    unique %>%
+    sort
+
+  expect_equal(sources, c('facebook', 'knowledgegraph'))
 })
