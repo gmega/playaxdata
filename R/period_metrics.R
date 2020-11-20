@@ -87,19 +87,20 @@ round_period <- function(.tbl, start, end, unit) {
 }
 
 #' @export
-for_source.period_metrics <- function(.tbl, source_name) {
-  index <- source_name_mapping %>%
-    table_entry(source_name, source_name) %>%
+for_source.period_metrics <- function(.tbl, ..., .dots = NULL) {
+  source_names <- get_parlist(..., .dots = .dots)
+
+  source_indices <- source_name_mapping %>%
+    get_keys(source_names, source_name) %>%
     pull(period_metrics_index)
 
-  .tbl %>%
-    filter(source_type == !!index) %>%
-    mutate(source_type = !!tolower(source_name))
+  .tbl %>% in_filter(source_type, source_indices)
 }
 
 #' @export
 for_metric_type.period_metrics <- function(.tbl, ..., .dots = NULL) {
   metric_types <- get_parlist(..., .dots = .dots)
+
   metric_indices <- match_metrics(metric_types)
   if (length(metric_indices) == 0) {
     stop(glue::glue('Unknown metric type(s) {metric_types}.'))

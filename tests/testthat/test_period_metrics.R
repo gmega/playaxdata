@@ -91,3 +91,17 @@ test_that('multiple metric type filters work', {
     c('followers', 'plays')
   )
 })
+
+test_that('multiple source filters work', {
+  metrics <- week_metrics() %>%
+    for_right_holder(rh_name) %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_source('youtube', 'spotify', 'knowledgegraph') %>%
+    collect %>%
+    with_source_names()
+
+  expect_equal(
+    metrics %>% pull(source_type) %>% unique %>% sort %>% tolower,
+    c('knowledgegraph', 'spotify', 'youtube')
+  )
+})
