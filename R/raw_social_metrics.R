@@ -167,7 +167,7 @@ for_source.rsm <- function(.tbl, ..., .dots = NULL) {
 
 #' @export
 for_metric_type.rsm <- function(.tbl, ..., .dots = NULL) {
-  metric_types <- get_parlist(..., .dots = NULL)
+  metric_types <- get_parlist(..., .dots = .dots)
 
   # Preselected sources are a problem. They've already
   # inserted filters into the query, and we'll generate redundant
