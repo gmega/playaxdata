@@ -31,7 +31,10 @@ with_matched_tracks.track_charts <- function(.tbl, track_info = TRUE) {
 
   if (track_info) {
     .tbl <- .tbl %>% left_join(tracks(), by = c('track$id' = 'id'),
-                       suffix = c('', '.tracks'))
+                       suffix = c('', '.tracks')) %>%
+      # track_metadata causes errors, likely because of embedded NULLs in
+      # strings (https://github.com/r-dbi/RMySQL/issues/139)
+      select(-track_metadata)
   }
   .tbl
 }
