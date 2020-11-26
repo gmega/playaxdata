@@ -21,21 +21,27 @@
 #'
 #' @export
 for_right_holder <- function(.tbl, ..., .dots = NULL) {
-  for_right_holder_(.tbl, .dots = resolve_right_holders(..., .dots = .dots))
+  for_right_holder_(.tbl, right_holder_ids =
+                      resolve_right_holders(..., .dots = .dots))
 }
 
-for_right_holder_ <- function(.tbl, ..., .dots = NULL) {
+for_right_holder_ <- function(.tbl, right_holder_ids) {
   UseMethod('for_right_holder_')
 }
 
 #' @export
-for_right_holder_.default <- function(.tbl, ..., .dots = NULL) {
+for_right_holder_.default <- function(.tbl, right_holder_ids) {
   if (!('right_holder_id' %in% colnames(.tbl))) {
-    stop(glue::glue('Don\'t know how to filter {class(.tbl)} by right holder',
-                    '- maybe you should call `with_right_holders` first?'))
+    # Tries to patch right holder info in.
+    .tbl <- tryCatch(
+      with_right_holders(.tbl),
+      # If we can't then raises an error.
+      error = function(err) {
+        stop(glue::glue('Don\'t know how to filter {class(.tbl)} by right holder',
+                      '- maybe you should call `with_right_holders` first?'))
+      })
   }
 
-  right_holder_ids <- get_parlist(..., .dots = .dots)
   .tbl %>% in_filter(right_holder_id, right_holder_ids)
 }
 

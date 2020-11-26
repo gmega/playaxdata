@@ -38,6 +38,8 @@ with_right_holders_.default <- function(.tbl, drop_invalid = TRUE) {
          info to a table lacking a right_holder_id column.')
   }
 
+  # XXX not sure running inner joins on drop_invalid is such a great
+  # idea.
   .tbl <- .tbl %>%
     join_mode(drop_invalid)(
       right_holders(),

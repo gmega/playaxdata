@@ -70,7 +70,7 @@ check_in_memory <- function(.tbl) {
   }
 }
 
-check_columns <- function(.tbl, expected_columns) {
+check_columns <- function(.tbl, expected_columns = list()) {
   actual_columns <- colnames(.tbl)
   actual_classes <- col_classes(.tbl)
 
@@ -90,6 +90,16 @@ check_columns <- function(.tbl, expected_columns) {
       stop(glue::glue('Column {expected_column} should be of class {expected_classes}, not {actual_class}.'))
     }
   }
+  .tbl
+}
+
+check_absent <- function(.tbl, expected_absent = list()) {
+  actual_columns <- colnames(.tbl)
+  unexpected <- which(unlist(expected_absent) %in% actual_columns)
+  if (length(unexpected) > 0) {
+    stop(glue::glue('Column {expected_absent[unexpected]} is present and should not be; '))
+  }
+  .tbl
 }
 
 col_classes <- function(.tbl) {
