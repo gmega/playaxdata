@@ -5,9 +5,7 @@
 \alias{city_social_metrics}
 \alias{state_social_metrics}
 \alias{region_social_metrics}
-\title{`*_social_metrics` are a set of per-artist tables which store "raw", daily
-data from the various sources ingested by Playax. These are "raw" in the
-sense that no processing is done on the data, and it is stored as-is.}
+\title{Global and regionalized per-artist, "raw" metrics}
 \usage{
 raw_social_metrics()
 
@@ -18,6 +16,11 @@ state_social_metrics()
 region_social_metrics()
 }
 \description{
+`*_social_metrics` are a set of per-artist tables which store "raw", daily
+data from the various sources ingested by Playax. These are "raw" in the
+sense that no processing is done on the data, and it is stored as-is.
+}
+\details{
 The global, most commonly used table is `raw_social_metrics`. Regionalized
 variants are available under `state_social_metrics` (per-state
 metrics), `city_social_metrics` (per-city metrics) and `region_social_metrics`

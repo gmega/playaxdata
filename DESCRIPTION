@@ -14,7 +14,6 @@ Imports:
   magrittr (>= 1.5)
 RoxygenNote: 7.1.1
 Collate: 
-    'charts.R'
     'data.R'
     'generics.R'
     'globals.R'
@@ -27,6 +26,7 @@ Collate:
     'right_holders.R'
     'standard_metrics.R'
     'test_helpers.R'
+    'track_charts.R'
     'tracks.R'
     'web_metrics.R'
     'zzz.R'

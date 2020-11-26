@@ -85,6 +85,8 @@ rsm_metrics <- function() {
     )
 }
 
+#' Global and regionalized per-artist, "raw" metrics
+#'
 #' `*_social_metrics` are a set of per-artist tables which store "raw", daily
 #' data from the various sources ingested by Playax. These are "raw" in the
 #' sense that no processing is done on the data, and it is stored as-is.
@@ -145,9 +147,9 @@ supported_sources.rsm <- function(.tbl) {
 }
 
 #' @export
-for_right_holder_.rsm <- function(.tbl, ..., .dots = NULL) {
+for_right_holder_.rsm <- function(.tbl, right_holder_ids) {
   external_ids <- db_tbl('right_holder_external_ids') %>%
-    for_right_holder(..., .dots = .dots) %>%
+    for_right_holder(.dots = right_holder_ids) %>%
     pull(source_id)
 
   .tbl %>% filter(source_id %in% external_ids)
