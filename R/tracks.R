@@ -1,20 +1,38 @@
-#' Lists tracks for a right holder
-#'
-#' Given a numeric right holder id or string pseudonym, returns all tracks that
-#' have been released by that right holder.
-#'
 #' @export
-#'
-#' @examples
-#'
-#'   tracks_for('Ludmilla')
-#'
-tracks_for <- function(right_holder) {
-  db_tbl('track_right_holders') %>%
-    filter(right_holder_id == !!resolve_right_holders(right_holder), role == 'Interpreter') %>%
-    inner_join(db_tbl('tracks'), by = c('track_id' = 'id'))
+tracks <- function() new_tracks(db_tbl('tracks'))
+
+new_tracks <- function(.tbl) {
+  class(.tbl) <- c('tracks', class(.tbl))
+  .tbl
 }
 
+is.tracks <- function(.tbl) inherits(.tbl, 'tracks')
+
+#' @export
+for_right_holder_.tracks <- function(.tbl, right_holder_ids) {
+  # Theoretically we would not need a specialized "for_right_holder_"
+  # implementation as the default implementation would handle it for us,
+  # but it turns out that there's a *huge* performance hit with the
+  # default query (tracks() %>% with_right_holders_.tracks %>%
+  # for_right_holder_.default) so we need a custom query here.
+  db_tbl('track_right_holders') %>%
+    in_filter(right_holder_id, right_holder_ids) %>%
+    filter(role == 'Interpreter') %>%
+    inner_join(.tbl, by = c('track_id'= 'id'), suffix = c('.trh', ''))
+}
+
+#' @export
+with_right_holders_.tracks <- function(.tbl, drop_invalid = TRUE) {
+  # FIXME improve this query so that it keeps ONE right holder if so
+  # desired.
+  .tbl <- .tbl %>%
+    left_join(db_tbl('track_right_holders'),
+              by = c('track_id' = 'id'),
+              suffix = c('', '.trh')) %>%
+    filter(role == 'Interpreter')
+
+  NextMethod()
+}
 
 #' Adds track info to the current table, if applicable.
 #'
@@ -25,7 +43,7 @@ tracks_for <- function(right_holder) {
 #'
 #' @export
 with_tracks <- function(.tbl, drop_invalid = TRUE) {
-  check_columns(.tbl, 'track_id')
+  check_absent(.tbl, 'track_id')
   .tbl %>% join_mode(drop_invalid)(
       # ColumnStore or RMySQL bug requires us to drop:
       #  1. the release column or the join turns up empty;
