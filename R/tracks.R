@@ -48,8 +48,8 @@ with_tracks <- function(.tbl, drop_invalid = TRUE) {
       # ColumnStore or RMySQL bug requires us to drop:
       #  1. the release column or the join turns up empty;
       #  2. the track_metadata column, or we'll get a large number of
-      #     "truncatedinternal error" warnings (and perhaps errors in the data,
-      #     who knows).
+      #     "truncatedinternal error" warnings. This is probably related
+      #     to embedded NULLs in strings (https://github.com/r-dbi/RMySQL/issues/139)
       db_tbl('tracks') %>% select(-release, -track_metadata),
       by = c('track_id' = 'id'),
       suffix = c('', '.tracks')

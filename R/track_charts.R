@@ -56,16 +56,15 @@ with_right_holders_.track_charts <- function(.tbl, drop_invalid = TRUE) {
 }
 
 #' @export
-for_source.track_charts <- function(.tbl, source) {
-  if (tolower(source) %nin% tolower(TRACK_CHARTS_SOURCES)) {
-    stop(glue::glue('Invalid source name {source}'))
-  }
+for_source.track_charts <- function(.tbl, ..., .dots = NULL) {
+  sources <- get_parlist(..., .dots = .dots)
+  check_metrics(sources, tolower(TRACK_CHARTS_SOURCES))
 
-  lookup <- TRACK_CHARTS_SOURCES[
-    tolower(TRACK_CHARTS_SOURCES) == tolower(source)]
+  # fetches with right capitalization
+  sources <- TRACK_CHARTS_SOURCES[
+    tolower(TRACK_CHARTS_SOURCES) %in% tolower(sources)]
 
-  .tbl %>%
-    filter(source_name == !!glue::glue('{lookup}Count'))
+  .tbl %>% in_filter(source_name, glue::glue('{sources}Count'))
 }
 
 #' @export

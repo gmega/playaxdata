@@ -32,12 +32,16 @@ STANDARD_METRICS <- list(
 #' indices, raising an error for unknown metric types.
 #'
 match_metrics <- function(metric_types) {
+  available <- names(STANDARD_METRICS)
+  check_metrics(metric_types, available)
+  which(available %in% metric_types) - 1
+}
+
+check_metrics <- function(metric_types, metric_source) {
   metric_types <- tolower(metric_types)
-  invalid <- setdiff(metric_types, names(STANDARD_METRICS))
+  invalid <- setdiff(metric_types, metric_source)
   if (length(invalid) > 0) {
     stop(glue::glue(
-      'Unknown metric type(s): <<{ paste(invalid, collapse = ", ") }>>'))
+      'Unknown metric(s): <<{ paste(invalid, collapse = ", ") }>>'))
   }
-
-  which(names(STANDARD_METRICS) %in% metric_types) - 1
 }
