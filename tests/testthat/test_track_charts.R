@@ -28,12 +28,12 @@ test_that('track reconciliation works', {
 test_that('filtering charts by source works', {
   charts <- day_track_charts() %>%
     for_dates('2020-01-01', '2020-01-01') %>%
-    for_source('itunes') %>%
+    for_source('itunes', 'spotify') %>%
     collect %>%
     with_source_names()
 
   expect_equal(
-    unique(charts$source_name), 'ITunes'
+    sort(unique(charts$source_name)), c('ITunes', 'Spotify')
   )
 })
 
