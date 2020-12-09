@@ -120,7 +120,7 @@ supported_sources.period_metrics <- function(.tbl) {
 #' @export
 supported_metric_types_.period_metrics <- function(.tbl, source) {
   source_code <- source_name_mapping %>%
-    table_entry(source, source_name) %>%
+    get_key(source, source_name) %>%
     pull(period_metrics_index)
 
   indices <- .tbl %>%

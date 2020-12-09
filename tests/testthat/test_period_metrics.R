@@ -105,3 +105,8 @@ test_that('multiple source filters work', {
     c('knowledgegraph', 'spotify', 'youtube')
   )
 })
+
+test_that('supported_metric_types returns meaningful results', {
+  metric_types <- unlist(month_metrics() %>% supported_metric_types('spotify'))
+  expect_equal(sort(metric_types), c('active_audience', 'followers', 'plays'))
+})

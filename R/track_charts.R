@@ -1,6 +1,7 @@
 # TODO use round period in for_dates, use different S3 classes for periodic
 # charts.
 
+# from https://github.com/playax/playax/blob/master/app/models/track_chart.rb#L4
 TRACK_CHARTS_SOURCES <- c('Playax', 'Radio', 'Youtube',
                           'Spotify', 'Deezer', 'ITunes')
 

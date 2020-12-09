@@ -100,7 +100,7 @@ test_that('supported_sources returns meaningful results', {
   )
 })
 
-test_that('supported_source actually uses the underlying table', {
+test_that('supported_sources actually uses the underlying table', {
   sources <- raw_social_metrics() %>%
     for_right_holder('Barões da Pisadinha') %>%
     for_dates('2019-01-01', '2019-01-01') %>%

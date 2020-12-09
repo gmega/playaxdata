@@ -34,6 +34,7 @@ get_keys <- function(.tbl, keys, key_col, unique = FALSE) {
 
 get_key <- function(.tbl, key, key_col) {
   key_col_name <- deparse(substitute(key_col))
+  key <- key # evaluates promise
   fexpr <- substitute(tolower(key_col) == tolower(key))
   entry <- .tbl %>% filter(!!fexpr)
 
