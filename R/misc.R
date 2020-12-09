@@ -111,17 +111,3 @@ col_classes <- function(.tbl) {
 }
 
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join
-
-
-f1 <- function(a, vals) {
-  xsym <- substitute(a)
-  lapply(
-    vals,
-    function(x) { xi <- x; xsym <- xsym; eval(substitute(f2(xsym, xi))) }
-  )
-}
-
-f2 <- function(s, val) {
-  a <- deparse(substitute(s))
-  paste(a, '-', val)
-}
