@@ -2,7 +2,7 @@ context('raw_social_metrics')
 
 rh_name <- 'Marília Mendonça'
 
-setup({ setup_db_access() })
+setup({ playaxdata:::setup_db_access() })
 
 test_that('date constraints work', {
   dates <- day_metrics() %>%
@@ -114,6 +114,22 @@ test_that('supported_sources actually uses the underlying table', {
     supported_sources
 
   expect_equal(sources, c('deezer', 'spotify', 'twitter'))
+})
+
+test_that('supported_metric_types returns meaningful results', {
+  expect_equal(
+    sort(day_metrics() %>% supported_metric_types('spotify')),
+    c('active_audience', 'followers', 'plays')
+  )
+})
+
+test_that('supported_metric_types returns an error for supported sources
+          without mapped metrics', {
+  # I'll use napster as we'll probably never bother to map this. :-)
+  expect_error(
+    day_metrics() %>% supported_metric_types('napster'),
+    'Source <<napster>> is supported, but has no mapped metric types.'
+  )
 })
 
 test_that('metric type selection works without source', {

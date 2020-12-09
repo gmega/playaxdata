@@ -15,7 +15,7 @@ resolve_location <- function(...) {
 }
 
 resolve_city <- function(city, state = NULL) {
-  entries <- cities %>% table_entry(city, city)
+  entries <- cities %>% get_key(city, city)
   if (nrow(entries) > 1) {
     if (is.null(state)) {
       stop(glue::glue("Ambiguous city name {city}. Must specify state."))
@@ -28,13 +28,13 @@ resolve_city <- function(city, state = NULL) {
 }
 
 resolve_state <- function(state) {
-  states %>% table_entry(state, name)
+  states %>% get_key(state, name)
 }
 
 resolve_region <- function(region) {
-  regions %>% table_entry(region, name)
+  regions %>% get_key(region, name)
 }
 
 resolve_country <- function(country) {
-  countries %>% table_entry(country, name)
+  countries %>% get_key(country, name)
 }

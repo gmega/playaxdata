@@ -128,9 +128,18 @@ new_rsm <- function(.tbl, source_name_idx) {
 
 #' @export
 supported_metric_types_.rsm <- function(.tbl, source, metric_type) {
-  c(names(MAPPINGS[[source]]),
-    table_entry(mapping_table(), source, source_name_str,
-                'source')$metric_type_str)
+  # FIXME this is not using the underlying table
+  tryCatch(
+    get_keys(rsm_metrics(), source, source_name_str) %>%
+      mutate(supported = coalesce(standard_name, non_standard_name)) %>%
+      pull(supported),
+    error = function(err) {
+      if (startsWith(err$message, 'Invalid source_name_str:')) {
+        stop(glue::glue('Source <<{source}>> is supported, but has no ',
+                        'mapped metric types.'))
+      }
+    }
+  )
 }
 
 #' @export
