@@ -4,7 +4,17 @@
 #' as their name, genre, and language.
 #'
 #' @export
-right_holders <- function() db_tbl('right_holders')
+right_holders <- function() new_right_holders(db_tbl('right_holders'))
+
+#' @export
+for_right_holder_.right_holders <- function(.tbl, right_holder_ids) {
+  .tbl %>% in_filter(id, right_holder_ids)
+}
+
+new_right_holders <- function(.tbl) {
+  class(.tbl) <- c('right_holders', class(.tbl))
+  .tbl
+}
 
 #' Enriches the current table with right holder information. By default,
 #' drops all rows that cannot be matched to any right holder, or which are
