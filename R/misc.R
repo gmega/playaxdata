@@ -103,11 +103,31 @@ check_absent <- function(.tbl, expected_absent = list()) {
   .tbl
 }
 
-col_classes <- function(.tbl) {
-  .tbl %>%
-    head(0) %>%
-    collect %>%
-    summarise_all(class)
+#' Table column classes
+#'
+#' Returns a \code{\link{tibble}} containing the class of each column in a given
+#' table. Works for in-memory and database tables.
+#'
+#' @examples
+#'
+#' col_classes(day_metrics())
+#'#> # A tibble: 2 x 7
+#'#> id      source_name source_id metric_type metric_date value   created_at
+#'#> <chr>   <chr>       <chr>     <chr>       <chr>       <chr>   <chr>
+#'#> 1 integer integer     character integer     POSIXct     numeric character
+#'#> 2 integer integer     character integer     POSIXt      numeric character
+#'
+#' @export
+col_classes <- function(.tbl) UseMethod('col_classes')
+
+#' @export
+col_classes.tbl_dbi <- function(.tbl) {
+  col_classes.tbl_df(.tbl %>% head(0) %>% collect)
+}
+
+#' @export
+col_classes.tbl_df <- function(.tbl) {
+  .tbl %>% ungroup %>% summarise_all(class)
 }
 
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join
