@@ -2,12 +2,11 @@
 % Please edit documentation in R/right_holders.R
 \name{right_holders}
 \alias{right_holders}
-\title{Returns the table of all right holders, with information such
-as their name, genre, and language.}
+\title{Right holder base data}
 \usage{
 right_holders()
 }
 \description{
-Returns the table of all right holders, with information such
-as their name, genre, and language.
+Table containing all right holders, with information such as
+their name, genre, and language.
 }

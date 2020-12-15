@@ -1,6 +1,7 @@
 context('misc')
 
-#setup({ setup_db_access() })
+setup({ setup_db_access() })
+
 period_metrics_schema <- tibble(
   right_holder_id = 'integer',
   source_type = 'integer',

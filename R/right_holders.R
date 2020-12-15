@@ -1,7 +1,9 @@
 .globals$rh_cache <- list()
 
-#' Returns the table of all right holders, with information such
-#' as their name, genre, and language.
+#' Right holder base data
+#'
+#' Table containing all right holders, with information such as
+#' their name, genre, and language.
 #'
 #' @export
 right_holders <- function() new_right_holders(db_tbl('right_holders'))
@@ -75,135 +77,6 @@ with_genres <- function(.tbl) {
 #'
 #' @export
 with_language <- function(.tbl) with_right_holders(.tbl, 'language')
-
-#' Enriches a table containing right holder information with associated
-#' pseudonyms.
-#'
-#' @param main for right holders having more than one pseudonym, returns
-#' only the one registered as its "main" pseudonym, if any. Note that data
-#' errors mean that it may happen that an artist has multiple "main"
-#' pseudonyms.
-#'
-#' @export
-with_pseudos <- function(.tbl, main = TRUE) {
-  .tbl <- ensure_right_holders(.tbl) %>%
-    left_join(
-      db_tbl('right_holder_pseudos'),
-      by = 'right_holder_id',
-      suffix = c('', '.pseudos')
-    )
-
-  if (main) .tbl %>% filter(main == 1) else .tbl
-}
-
-#' As \code{\link{find_right_holder}}, but accepts multiple right holder
-#' pseudonyms.
-#'
-#' @param ... a set of right holder names to resolve.
-#' @param match mode. 'any' will return any matching pseudonym; 'all' will
-#'             return all pseudonyms, 'main' will return only the main pseudonym,
-#'             or error out if there is more than one.
-#'
-#' @return a \code{\link{data.frame}} containing a `pseudo` and a `right_holder_id`
-#'         column. Depending on the match mode, may return multiple rows for
-#'         a given pseudo.
-#'
-#' @seealso find_right_holder
-#'
-#' @export
-find_right_holders <- function(..., .dots = NULL, mode = c('any', 'all', 'main')) {
-  pseudos <- get_parlist(..., .dots = .dots)
-  # This is SLOW. Ideally we should carve up a multi-right-holder version of
-  # find_right_holder and treat the single right holder function as the
-  # special case.
-  lapply(
-    pseudos,
-    function(pseudo) {
-      tibble(
-        pseudo = pseudo,
-        right_holder_id = find_right_holder(pseudo, mode)
-      )
-    }
-  ) %>% {
-    do.call(rbind, .)
-  }
-}
-
-#' Finds a right_holder ID by its pseudonymn.
-#'
-#' @param name a string representing the artist's name.
-#' @param mode match mode. 'any' will return any matching pseudonym; 'all' will
-#'             return all pseudonyms, 'main' will return only the main pseudonym,
-#'             or error out if there is more than one.
-#'
-#' @return an integer vector representing the right holder IDs associated with this
-#' name.
-#'
-#' @export
-find_right_holder <- function(name, mode = c('any', 'all', 'main')) {
-  mode <- match.arg(mode)
-
-  cache <- .globals$rh_cache
-  if (name %in% names(cache)) {
-    entry <- cache[[name]]
-    if (mode == entry$mode) {
-      return(entry$id)
-    }
-  }
-
-  pseudos <- db_tbl('right_holder_pseudos') %>%
-    filter(name %LIKE% !!name) %>%
-    inner_join(
-      db_tbl('right_holders') %>%
-        # non-null group_ids mean that the right holder is either messed up
-        # or is part of a band which is already represented by another primary
-        # id.
-        filter(is.null(group_id)) %>%
-        select(id),
-      by = c('right_holder_id' = 'id')
-    ) %>%
-    select(right_holder_id, name, main) %>%
-    collect
-
-  # We got nothing.
-  if(nrow(pseudos) == 0) {
-    stop(glue::glue('No matches for pseudonymn {name}.'))
-  }
-
-  # 'any' will prefer the main pseudonym, but may return a secondary one
-  # if no non-mains are found.
-  if (mode == 'any') {
-    pseudos <- pseudos %>% arrange(desc(main)) %>% slice(1)
-  } else if (mode == 'main') {
-    pseudos <- pseudos %>% filter(main == 1)
-    # 'main' will complain if there's more than one pseudonym.
-    if (nrow(pseudos) > 1) {
-      stop(glue::glue(
-        'Ambiguous pseudonymn {name}. Set mode = "all" to return multiple.'))
-    }
-    # clearly we also have to complain if there isn't a main pseudonyms
-    # registered.
-    if (nrow(pseudos) == 0) {
-      stop(glue::glue('No main pseudonym registered for {name}.'))
-    }
-  }
-
-  .globals$rh_cache[[name]] <- list(mode=mode, id=pseudos$right_holder_id)
-
-  pseudos$right_holder_id
-}
-
-resolve_right_holders <- function(..., .dots = NULL) {
-  right_holders <- get_parlist(..., .dots = .dots)
-
-  if (all(sapply(right_holders, is.character))) {
-    find_right_holders(.dots = right_holders, mode = 'any')$right_holder_id
-  } else if(all(sapply(right_holders, is.numeric))) {
-    unlist(right_holders)
-  } else {
-    stop(glue::glue('Right holders must be string or numeric, not {right_holder}.'))
-  }
-}
 
 ensure_right_holders <- function(.tbl) {
   if ('right_holder_id' %nin% colnames(.tbl)) {
