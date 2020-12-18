@@ -4,7 +4,7 @@
 \alias{match_metrics}
 \title{Resolve metric type indices}
 \usage{
-match_metrics(metric_types)
+match_metrics(metric_types, available_metrics = names(STANDARD_METRICS))
 }
 \description{
 Matches a character vector of metric types to their corresponding metric

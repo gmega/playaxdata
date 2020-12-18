@@ -1,18 +1,8 @@
-# Ipsis literis from the Ruby code.
-SOURCE_NAMES <- l(
-  'DeezerCount'       = 0,
-  'ITunesCount'       = 1,
-  'OnerpmCount'       = 2,
-  'Palcomp3Count'     = 3,
-  'RdioCount'         = 4,
-  'RhapsodyCount'     = 5,
-  'SoundcloudCount'   = 6,
-  'SpotifyCount'      = 7,
-  'TratoreCount'      = 8,
-  'VimeoCount'        = 9,
-  'YoutubeAssetCount' = 10,
-  'YoutubeCount'      = 11,
-  'LinkfireCount'     = 12
+# web_metrics has yet another source coding scheme.
+SOURCE_NAMES <- c(
+  'Deezer', 'ITunes', 'Onerpm', 'Palcomp3', 'Rdio',
+  'Rhapsody', 'Soundcloud', 'Spotify', 'Tratore', 'Vimeo',
+  'YoutubeAsset', 'Youtube', 'Linkfire'
 )
 
 #' @export
@@ -60,11 +50,6 @@ new_web_metrics <- function(.tbl) {
 }
 
 #' @export
-web_metric_source <- function(name) {
-  SOURCE_NAMES[[glue::glue('{stringr::str_to_title(name)}Count')]]
-}
-
-#' @export
 as.web_metrics <- function(.tbl) {
   class(.tbl) <- c('web_metrics', class(.tbl))
   .tbl
@@ -77,8 +62,11 @@ with_right_holders_.web_metrics <- function(.tbl, drop_invalid = TRUE) {
 }
 
 #' @export
-for_source.web_metrics <- function(.tbl, source_name) {
-  .tbl %>% filter(source_name == !!web_metric_source(source_name))
+for_source.web_metrics <- function(.tbl, ..., .dots = NULL) {
+  sources <- get_parlist(..., .dots = .dots)
+  source_indices <- match_metrics(sources, tolower(SOURCE_NAMES))
+
+  .tbl %>% in_filter(source_name, source_indices)
 }
 
 #' @export
@@ -106,4 +94,10 @@ aggregate.web_metrics <- function(.tbl) {
       summarise(metric_value = sum(metric_value, na.rm = TRUE)) %>%
       ungroup()
     )
+}
+
+#' @export
+with_source_names.web_metrics <- function(.tbl) {
+  check_in_memory(.tbl)
+  .tbl %>% mutate(source_name = SOURCE_NAMES[source_name + 1])
 }

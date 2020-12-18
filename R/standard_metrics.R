@@ -31,10 +31,9 @@ STANDARD_METRICS <- list(
 #' Matches a character vector of metric types to their corresponding metric
 #' indices, raising an error for unknown metric types.
 #'
-match_metrics <- function(metric_types) {
-  available <- names(STANDARD_METRICS)
-  check_metrics(metric_types, available)
-  which(available %in% metric_types) - 1
+match_metrics <- function(metric_types, available_metrics = names(STANDARD_METRICS)) {
+  check_metrics(metric_types, available_metrics)
+  which(available_metrics %in% metric_types) - 1
 }
 
 check_metrics <- function(metric_types, metric_source) {
