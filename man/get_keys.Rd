@@ -2,16 +2,18 @@
 % Please edit documentation in R/misc.R
 \name{get_keys}
 \alias{get_keys}
-\title{get_keys is a specialized filter operation with additional checks. Given
-a table, a set of keys and a key column, get_keys will keep lines in which
-keys correspond to values in the key column, and check that:}
+\title{Filters a table by key values}
 \usage{
 get_keys(.tbl, keys, key_col, unique = FALSE)
 }
 \description{
-1. no values are missing;
- 2. there is only one row per key (optional).
+get_keys is a specialized filter operation with additional checks. Given
+a table, a set of keys and a key column, get_keys will keep lines in which
+keys correspond to values in the key column, and check that:
 }
 \details{
+1. no values are missing;
+ 2. there is only one row per key (optional).
+
 Keys are assumed to be strings, and are case-insensitive.
 }

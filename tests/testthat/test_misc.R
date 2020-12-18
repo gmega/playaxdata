@@ -35,3 +35,11 @@ test_that('classes are correctly identified for in-memory tables', {
     period_metrics_schema %>% select(order(colnames(.)))
   )
 })
+
+test_that('we can distinguish tables that are in memory', {
+  remote <- week_metrics() %>% head(10)
+  local <- remote %>% collect
+
+  expect_false(is_in_memory(remote))
+  expect_true(is_in_memory(local))
+})

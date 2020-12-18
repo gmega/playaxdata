@@ -1,4 +1,50 @@
+#' Table column classes
+#'
+#' Returns a \code{\link{tibble}} containing the class of each column in a given
+#' table. Works for in-memory and database tables.
+#'
+#' @examples
+#'
+#' col_classes(day_metrics())
+#'#> # A tibble: 2 x 7
+#'#> id      source_name source_id metric_type metric_date value   created_at
+#'#> <chr>   <chr>       <chr>     <chr>       <chr>       <chr>   <chr>
+#'#> 1 integer integer     character integer     POSIXct     numeric character
+#'#> 2 integer integer     character integer     POSIXt      numeric character
+#'
+#' @export
+col_classes <- function(.tbl) UseMethod('col_classes')
 
+#' @export
+col_classes.tbl_dbi <- function(.tbl) {
+  col_classes.tbl_df(.tbl %>% head(0) %>% collect)
+}
+
+#' @export
+col_classes.tbl_df <- function(.tbl) {
+  .tbl %>% ungroup %>% summarise_all(class)
+}
+
+#' Checks if a table is in memory
+#'
+#' Checks if a table reference points to a table in memory or to a remote table
+#' in the database.
+#'
+#' @return \code{True} if the table is in memory, or \code{False} otherwise.
+#'
+#' @export
+is_in_memory <- function(.tbl) {
+  if ('tbl_dbi' %in% class(.tbl)) {
+    FALSE
+  } else if ('tbl_df' %in% class(.tbl)) {
+    TRUE
+  } else {
+    stop('Unknown table type.')
+  }
+}
+
+#' Filters a table by key values
+#'
 #' get_keys is a specialized filter operation with additional checks. Given
 #' a table, a set of keys and a key column, get_keys will keep lines in which
 #' keys correspond to values in the key column, and check that:
@@ -64,7 +110,7 @@ get_parlist <- function(..., .dots = NULL) {
 }
 
 check_in_memory <- function(.tbl) {
-  if (!('tbl_df' %in% class(.tbl))) {
+  if (!is_in_memory(.tbl)) {
     parent <- sys.calls()[[sys.nframe() - 1]]
     stop(glue::glue('{parent}: This function only works ',
                     'for tables brought in-memory with `collect`.'))
@@ -101,33 +147,6 @@ check_absent <- function(.tbl, expected_absent = list()) {
     stop(glue::glue('Column {expected_absent[unexpected]} is present and should not be; '))
   }
   .tbl
-}
-
-#' Table column classes
-#'
-#' Returns a \code{\link{tibble}} containing the class of each column in a given
-#' table. Works for in-memory and database tables.
-#'
-#' @examples
-#'
-#' col_classes(day_metrics())
-#'#> # A tibble: 2 x 7
-#'#> id      source_name source_id metric_type metric_date value   created_at
-#'#> <chr>   <chr>       <chr>     <chr>       <chr>       <chr>   <chr>
-#'#> 1 integer integer     character integer     POSIXct     numeric character
-#'#> 2 integer integer     character integer     POSIXt      numeric character
-#'
-#' @export
-col_classes <- function(.tbl) UseMethod('col_classes')
-
-#' @export
-col_classes.tbl_dbi <- function(.tbl) {
-  col_classes.tbl_df(.tbl %>% head(0) %>% collect)
-}
-
-#' @export
-col_classes.tbl_df <- function(.tbl) {
-  .tbl %>% ungroup %>% summarise_all(class)
 }
 
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join
