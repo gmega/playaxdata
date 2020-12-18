@@ -2,7 +2,7 @@ context('web_metrics')
 
 rh_name <- 'Ludmilla'
 
-#setup({ setup_db_access() })
+setup({ setup_db_access() })
 
 test_that('multiple metric filter works', {
   metric_types <- web_metrics(with_right_holders = TRUE) %>%
