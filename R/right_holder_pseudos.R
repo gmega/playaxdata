@@ -71,7 +71,8 @@ with_pseudos <- function(.tbl, mode = c('any', 'main', 'all')) {
     left_join(
       right_holder_pseudos(mode),
       by = 'right_holder_id',
-      suffix = c('', '.pseudos')
+      suffix = c('', '.pseudos'),
+      copy = TRUE # allows enriching in-memory tables with pseudos
     )
 }
 
