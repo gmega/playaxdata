@@ -140,13 +140,4 @@ check_columns <- function(.tbl, expected_columns = list()) {
   .tbl
 }
 
-check_absent <- function(.tbl, expected_absent = list()) {
-  actual_columns <- colnames(.tbl)
-  unexpected <- which(unlist(expected_absent) %in% actual_columns)
-  if (length(unexpected) > 0) {
-    stop(glue::glue('Column {expected_absent[unexpected]} is present and should not be; '))
-  }
-  .tbl
-}
-
 join_mode <- function(drop_invalid) if (drop_invalid) inner_join else left_join

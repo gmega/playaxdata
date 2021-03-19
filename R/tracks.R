@@ -43,7 +43,7 @@ with_right_holders_.tracks <- function(.tbl, drop_invalid = TRUE) {
 #'
 #' @export
 with_tracks <- function(.tbl, drop_invalid = TRUE) {
-  check_absent(.tbl, 'track_id')
+  check_columns(.tbl, list('track_id' = 'integer'))
   .tbl %>% join_mode(drop_invalid)(
       # ColumnStore or RMySQL bug requires us to drop:
       #  1. the release column or the join turns up empty;
