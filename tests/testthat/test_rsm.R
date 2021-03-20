@@ -139,7 +139,6 @@ test_that('metric type selection works without source', {
     for_dates('2020-05-01', '2020-05-01') %>%
     collect
 
-  plays <- item_index(playaxdata:::STANDARD_METRICS, 'plays')
   play_types <- playaxdata:::std_metrics() %>%
     filter(metric_type_str == 'plays') %>%
     pull(metric_type) %>%

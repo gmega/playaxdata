@@ -200,7 +200,8 @@ for_metric_type.rsm <- function(.tbl, ..., .dots = NULL) {
              (non_standard_name %in% tolower(metric_types)))
 
   # Generates where clauses and runs the query.
-  .tbl %>% filter(!!generate_clauses(pairs$source_name, pairs$metric_type))
+  .tbl %>% filter(!!generate_clauses(attributes(.tbl)$source_name_idx,
+                                     pairs$source_name, pairs$metric_type))
 }
 
 # Reverse-selects sources from metric types.
@@ -212,13 +213,15 @@ reverse_select <- function(metric_types) {
     unique
 }
 
-generate_clauses <- function(sources, metric_types, i = 1) {
+generate_clauses <- function(source_name_idx, sources, metric_types, i = 1) {
   source <- sources[i]
   type <- metric_types[i]
+  source_name_idx <- as.symbol(source_name_idx)
 
-  expr <- substitute((source_name == source & metric_type == type))
+  expr <- substitute((source_name_idx == source & metric_type == type))
   if (i < length(sources) & i < length(metric_types)) {
-    expr <- call('|', expr, generate_clauses(sources, metric_types, i + 1))
+    expr <- call('|', expr, generate_clauses(
+      source_name_idx, sources, metric_types, i + 1))
   }
   expr
 }
@@ -242,15 +245,19 @@ with_right_holders_.rsm <- function(.tbl, drop_invalid = TRUE) {
 with_source_names.rsm <- function(.tbl) {
   # We can only do this to in-memory tables.
   check_in_memory(.tbl)
-  check_columns(.tbl, list('metric_type' = 'integer',
-                           'source_name' = 'integer'))
+  source_name_idx <- attributes(.tbl)$source_name_idx
+  check_columns(.tbl, l('metric_type' = 'integer',
+                         !!source_name_idx := 'integer'))
+
+  join_spec <- c('metric_type')
+  join_spec[source_name_idx] = 'source_name'
 
   .tbl %>%
     left_join(
       rsm_metrics() %>%
         mutate(metric_type_str = coalesce(standard_name, non_standard_name)) %>%
         select(metric_type, source_name, metric_type_str, source_name_str),
-      by = c('source_name', 'metric_type')
+      by = join_spec
     ) %>%
     select(-source_name, -metric_type) %>%
     rename(
