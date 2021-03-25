@@ -5,10 +5,20 @@
 \title{As \code{\link{find_right_holder}}, but accepts multiple right holder
 pseudonyms.}
 \usage{
-find_right_holders(..., .dots = NULL, mode = c("any", "all", "main"))
+find_right_holders(
+  ...,
+  .dots = NULL,
+  mode = c("any", "all", "main"),
+  if_absent = c("raise_error", "return_NA")
+)
 }
 \arguments{
 \item{...}{a set of right holder names to resolve.}
+
+\item{if_absent}{how to behave when a pseudonym is missing. Can be either
+'raise_error' (default), which will raise an error; or
+'return_NA', which will return NAs for pseudonyms that
+cannot be matched.}
 
 \item{match}{mode. 'any' will return any matching pseudonym; 'all' will
 return all pseudonyms, 'main' will return only the main pseudonym,

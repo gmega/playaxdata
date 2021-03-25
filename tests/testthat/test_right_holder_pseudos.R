@@ -50,3 +50,21 @@ test_that('"all" mode works', {
   # Should have more than 500 pseudos.
   expect_gte(nrow(pseudos), 500)
 })
+
+test_that('missing pseudos raise error if no policy is specified', {
+  expect_error(
+    find_right_holders('Marília Mendonça', 'Gusttavo Lima', 'JAHJ$*!&#$UHJF'),
+    'No matches for pseudonymn JAHJ$*!&#$UHJF.',
+    fixed = TRUE
+  )
+})
+
+test_that('missing pseudos result in NAs if policy is "return_NA"', {
+  expect_equal(
+    find_right_holders(
+      'Marília Mendonça', 'Gusttavo Lima', 'JAHJ$*!&#$UHJF',
+      if_absent = 'return_NA'
+    ) %>% arrange(pseudo) %>% pull(right_holder_id),
+    c(508, NA, 43744)
+  )
+})

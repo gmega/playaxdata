@@ -83,6 +83,10 @@ with_pseudos <- function(.tbl, mode = c('any', 'main', 'all')) {
 #' @param match mode. 'any' will return any matching pseudonym; 'all' will
 #'             return all pseudonyms, 'main' will return only the main pseudonym,
 #'             or error out if there is more than one.
+#' @param if_absent how to behave when a pseudonym is missing. Can be either
+#'                  'raise_error' (default), which will raise an error; or
+#'                  'return_NA', which will return NAs for pseudonyms that
+#'                  cannot be matched.
 #'
 #' @return a \code{\link{data.frame}} containing a `pseudo` and a `right_holder_id`
 #'         column. Depending on the match mode, may return multiple rows for
@@ -91,7 +95,9 @@ with_pseudos <- function(.tbl, mode = c('any', 'main', 'all')) {
 #' @seealso find_right_holder
 #'
 #' @export
-find_right_holders <- function(..., .dots = NULL, mode = c('any', 'all', 'main')) {
+find_right_holders <- function(..., .dots = NULL,
+                               mode = c('any', 'all', 'main'),
+                               if_absent = c('raise_error', 'return_NA')) {
   pseudos <- get_parlist(..., .dots = .dots)
   # This is SLOW. Ideally we should carve up a multi-right-holder version of
   # find_right_holder and treat the single right holder function as the
@@ -101,7 +107,7 @@ find_right_holders <- function(..., .dots = NULL, mode = c('any', 'all', 'main')
     function(pseudo) {
       tibble(
         pseudo = pseudo,
-        right_holder_id = find_right_holder(pseudo, mode)
+        right_holder_id = find_right_holder(pseudo, mode, if_absent)
       )
     }
   ) %>% {
@@ -115,13 +121,20 @@ find_right_holders <- function(..., .dots = NULL, mode = c('any', 'all', 'main')
 #' @param mode match mode. 'any' will return any matching pseudonym; 'all' will
 #'             return all pseudonyms, 'main' will return only the main pseudonym,
 #'             or error out if there is more than one.
+#' @param if_absent how to behave when a pseudonym is missing. Can be either
+#'                  'raise_error' (default), which will raise an error; or
+#'                  'return_NA', which will return NAs for pseudonyms that
+#'                  cannot be matched.
 #'
 #' @return an integer vector representing the right holder IDs associated with this
 #' name.
 #'
 #' @export
-find_right_holder <- function(name, mode = c('any', 'all', 'main')) {
+find_right_holder <- function(name,
+                              mode = c('any', 'all', 'main'),
+                              if_absent = c('raise_error', 'return_NA')) {
   mode <- match.arg(mode)
+  if_absent <- match.arg(if_absent)
 
   cache <- .globals$rh_cache
   if (name %in% names(cache)) {
@@ -147,7 +160,10 @@ find_right_holder <- function(name, mode = c('any', 'all', 'main')) {
 
   # We got nothing.
   if(nrow(pseudos) == 0) {
-    stop(glue::glue('No matches for pseudonymn {name}.'))
+    if (if_absent == 'raise_error') {
+      stop(glue::glue('No matches for pseudonymn {name}.'))
+    }
+    return(NA)
   }
 
   # 'any' will prefer the main pseudonym, but may return a secondary one
