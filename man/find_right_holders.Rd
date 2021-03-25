@@ -9,7 +9,8 @@ find_right_holders(
   ...,
   .dots = NULL,
   mode = c("any", "all", "main"),
-  if_absent = c("raise_error", "return_NA")
+  if_absent = c("raise_error", "return_NA"),
+  strategies = NULL
 )
 }
 \arguments{

@@ -1,4 +1,3 @@
-
 #' Right holder pseudonyms
 #'
 #' Table of right holder pseudonyms, or artistic names. Right holders may have
@@ -97,7 +96,8 @@ with_pseudos <- function(.tbl, mode = c('any', 'main', 'all')) {
 #' @export
 find_right_holders <- function(..., .dots = NULL,
                                mode = c('any', 'all', 'main'),
-                               if_absent = c('raise_error', 'return_NA')) {
+                               if_absent = c('raise_error', 'return_NA'),
+                               strategies = NULL) {
   pseudos <- get_parlist(..., .dots = .dots)
   # This is SLOW. Ideally we should carve up a multi-right-holder version of
   # find_right_holder and treat the single right holder function as the
@@ -114,6 +114,19 @@ find_right_holders <- function(..., .dots = NULL,
     do.call(rbind, .)
   }
 }
+
+#' Pre-packaged strategies which might be supplied to find_right_holder(s) to
+#' increase chances of a match success by transforming the input.
+#'
+#' @export
+PSEUDONYM_LOOKUP_STRATEGIES <- l(
+  replace_ampersand = function(ampersand_translation) {
+    l(
+      applicable = function(name) grepl('&', name),
+      apply = function(name) gsub('&', ampersand_translation, name)
+    )
+  }
+)
 
 #' Finds a right_holder ID by its pseudonymn.
 #'
@@ -132,10 +145,36 @@ find_right_holders <- function(..., .dots = NULL,
 #' @export
 find_right_holder <- function(name,
                               mode = c('any', 'all', 'main'),
-                              if_absent = c('raise_error', 'return_NA')) {
-  mode <- match.arg(mode)
+                              if_absent = c('raise_error', 'return_NA'),
+                              strategies = NULL) {
+
   if_absent <- match.arg(if_absent)
 
+  strategies <- c(
+    l(identity = l(applicable = function(name) TRUE, apply = identity)),
+    strategies
+  )
+
+  match <- NA
+  for (strategy in strategies) {
+    match <- if (strategy$applicable(name))
+      find_right_holder0(strategy$apply(name), mode = mode) else NA
+
+    if (!is.na(match)) {
+      break
+    }
+  }
+
+  if (is.na(match) & if_absent == 'raise_error') {
+    stop(glue::glue('No matches for pseudonymn {name}.'))
+  }
+
+  match
+}
+
+find_right_holder0 <- function(name,
+                               mode = c('any', 'all', 'main')) {
+  mode <- match.arg(mode)
   cache <- .globals$rh_cache
   if (name %in% names(cache)) {
     entry <- cache[[name]]
@@ -160,9 +199,6 @@ find_right_holder <- function(name,
 
   # We got nothing.
   if(nrow(pseudos) == 0) {
-    if (if_absent == 'raise_error') {
-      stop(glue::glue('No matches for pseudonymn {name}.'))
-    }
     return(NA)
   }
 

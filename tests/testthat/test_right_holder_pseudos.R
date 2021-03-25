@@ -68,3 +68,16 @@ test_that('missing pseudos result in NAs if policy is "return_NA"', {
     c(508, NA, 43744)
   )
 })
+
+test_that('input modification strategies work', {
+  expect_equal(
+    find_right_holder('Christian & Ralf', if_absent = 'return_NA'),
+    NA
+  )
+
+  expect_equal(
+    find_right_holder('Christian & Ralf', strategies =
+                        l(PSEUDONYM_LOOKUP_STRATEGIES$replace_ampersand('e'))),
+    88396
+  )
+})
