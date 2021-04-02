@@ -51,6 +51,13 @@ test_that('"all" mode works', {
   expect_gte(nrow(pseudos), 500)
 })
 
+test_that('lookup does not get thrown off by trailing/leading white spaces', {
+  expect_equal(
+    find_right_holder('   Marília Mendonça     '),
+    43744
+  )
+})
+
 test_that('missing pseudos raise error if no policy is specified', {
   expect_error(
     find_right_holders('Marília Mendonça', 'Gusttavo Lima', 'JAHJ$*!&#$UHJF'),

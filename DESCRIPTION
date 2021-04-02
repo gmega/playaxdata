@@ -1,7 +1,7 @@
 Package: playaxdata
 Type: Package
 Title: Easy access to Playax data from R
-Version: 0.25.0
+Version: 0.26.0
 Author: Giuliano Mega
 Maintainer: Giuliano Mega <giuliano@playax.com>
 Description: An evolving client and API for accessing Playax data from R.
@@ -11,7 +11,8 @@ Imports:
   dbplyr (>= 1.4.2),
   dplyr (>= 0.8.3),
   megautils (>= 0.10.0),
-  magrittr (>= 1.5)
+  magrittr (>= 1.5),
+  stringr (>= 1.4.0)
 RoxygenNote: 7.1.1
 Collate: 
     'data.R'

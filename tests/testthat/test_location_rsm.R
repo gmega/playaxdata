@@ -34,3 +34,38 @@ test_that('metric type filters work', {
   expect_equal(unique(data$metric_type), 'plays')
 
 })
+
+test_that('city filters work for city table', {
+  metrics <- city_social_metrics() %>%
+    for_location(city = 'Santos', state = 'São Paulo') %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_right_holder('Diogo Nogueira') %>%
+    collect
+
+  expect_gte(nrow(metrics), 0)
+  expect_equal(unique(metrics$city_id), 2452)
+})
+
+test_that('state filters work for state table', {
+  metrics <- state_social_metrics() %>%
+    for_location(state = 'São Paulo') %>%
+    for_dates('2020-01-01', '2020-01-01') %>%
+    for_right_holder('Diogo Nogueira') %>%
+    collect
+
+  expect_gte(nrow(metrics), 0)
+  expect_equal(unique(metrics$state_id), 25)
+})
+
+test_that('state filters work for state table', {
+  metrics <- region_social_metrics() %>%
+    for_location(region = 'Sudeste') %>%
+    for_dates('2020-01-01', '2020-01-31') %>%
+    for_right_holder('Diogo Nogueira') %>%
+    for_source('Spotify') %>%
+    collect
+
+  expect_gte(nrow(metrics), 0)
+  expect_equal(unique(metrics$source_name), 'Spotify')
+  expect_equal(unique(metrics$region_id), 4)
+})

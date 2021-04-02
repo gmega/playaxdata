@@ -66,12 +66,38 @@ for_dates_.year_metrics <- function(.tbl, start, end) {
 }
 
 #' @export
-for_location.period_metrics <- function(.tbl, ...) {
-  location <- resolve_location(...)
+for_location_.period_metrics <- function(.tbl, location_type, location_id) {
   .tbl %>% filter(
-    location_type == !!location$location_type,
-    location_id == !!location$location_id
+    location_type == !!location_type,
+    location_id == !!location_id
   )
+}
+
+#' @export
+for_location_type_.period_metrics <- function(.tbl, location_type) {
+  .tbl %>% filter(location_type == !!resolve_location_type(location_type))
+}
+
+#' @export
+supported_location_types.period_metrics <- function(.tbl) {
+  LOCATION_TYPES
+}
+
+#' @export
+with_location_names.period_metrics <- function(.tbl) {
+  check_in_memory(.tbl)
+  check_columns(.tbl, l(
+    'location_type' = 'integer',
+    'location_id' = 'integer'
+  ))
+
+  .tbl %>%
+    left_join(location_labels(),
+              by = c('location_type', 'location_id')) %>%
+    mutate(
+      location_type = location_type_name,
+      location_id = location_name
+    )
 }
 
 round_period <- function(.tbl, start, end, unit) {

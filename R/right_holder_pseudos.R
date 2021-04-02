@@ -107,7 +107,7 @@ find_right_holders <- function(..., .dots = NULL,
     function(pseudo) {
       tibble(
         pseudo = pseudo,
-        right_holder_id = find_right_holder(pseudo, mode, if_absent)
+        right_holder_id = find_right_holder(pseudo, mode, if_absent, strategies)
       )
     }
   ) %>% {
@@ -154,6 +154,8 @@ find_right_holder <- function(name,
     l(identity = l(applicable = function(name) TRUE, apply = identity)),
     strategies
   )
+
+  name <- stringr::str_squish(name)
 
   match <- NA
   for (strategy in strategies) {

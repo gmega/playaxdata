@@ -136,12 +136,6 @@ supports_metric_type <- function(.tbl, source, metric_type) {
   metric_type %in% supported_metric_types(source)
 }
 
-#' @export
-for_location <- function(.tbl, city = NULL, state = NULL,
-                         region = NULL, country = NULL) {
-  UseMethod('for_location')
-}
-
 #' Adds symbolic source names into the current table
 #'
 #' Decodes source names in the current table into strings, either by replacing
@@ -164,4 +158,64 @@ with_source_names <- function(.tbl) {
 #' @export
 with_metric_types <- function(.tbl) {
   UseMethod('with_metric_types')
+}
+
+#' Returns location-specific data. Supports returning data by city, state,
+#' region, or country.
+#'
+#' If the name of an administrative region is ambiguous (e.g. the city of York
+#' exists in both England and the US), will raise an error unless a disambiguating
+#' outer administrative region (the country, in this case) is also supplied.
+#'
+#' Not all tables support location filtering, and not all tables that support
+#' location filtering support all location types. See \link{supported_location_types}
+#' before attempting to query a table.
+#'
+#' @export
+for_location <- function(.tbl, ...) {
+  # TODO: improve parameter handling
+  location <- resolve_location(...)
+  location_type <- LOCATION_TYPES[location$location_type + 1]
+  if (location_type %nin% supported_location_types(.tbl)) {
+    stop(g('Table {class(.tbl)[1]} does not support location type {location_type}'))
+  }
+
+  for_location_(.tbl, location$location_type, location$location_id)
+}
+
+for_location_ <- function(.tbl, location_type, location_id) {
+  UseMethod('for_location_')
+}
+
+#' In tables which support multiple location types, returns data specific to
+#' one of them. See "supported_location_types".
+#'
+#' @export
+for_location_type <- function(.tbl, location_type) {
+  if (!supports_location_type(.tbl, location_type)) {
+    stop(g('Table {class(.tbl)[1]} does not support location type {location_type}.'))
+  }
+  for_location_type_(.tbl, location_type)
+}
+
+for_location_type_ <- function(.tbl, location_type) {
+  UseMethod('for_location_type_')
+}
+
+#' Returns a character vector containing the location types supported by this
+#' table. It should be a subset of \link{LOCATION_TYPES}.
+#'
+#' @export
+supported_location_types <- function(.tbl) {
+  UseMethod('supported_location_types')
+}
+
+#' @export
+supports_location_type <- function(.tbl, location_type) {
+  tolower(location_type) %in% supported_location_types(.tbl)
+}
+
+#' @export
+with_location_names <- function(.tbl) {
+  UseMethod('with_location_names')
 }

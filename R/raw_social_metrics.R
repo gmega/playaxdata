@@ -91,38 +91,55 @@ rsm_metrics <- function() {
 #' data from the various sources ingested by Playax. These are "raw" in the
 #' sense that no processing is done on the data, and it is stored as-is.
 #'
-#' The global, most commonly used table is `raw_social_metrics`. Regionalized
-#' variants are available under `state_social_metrics` (per-state
-#' metrics), `city_social_metrics` (per-city metrics) and `region_social_metrics`
-#' (per-region metrics).
+#' Regionalized variants are avaiable by supplying a different _scope_ parameter,
+#' or by calling `{city,state,region}_social_metrics` directly.
+#'
+#' @param scope a regionalized scope for the data. Valid scopes are `global`
+#'              (data for the whole planet or the whole country, default),
+#'              `city` (data per city), `state` (date per state), and
+#'              `region` (data per region).
 #'
 #' @export
-raw_social_metrics <- function() new_rsm(
-  db_tbl('raw_social_metrics_cs'), 'source_name')
+raw_social_metrics <- function(scope = c('global', 'city', 'state', 'region')) {
+  scope = match.arg(scope)
+  get(g('{scope}_social_metrics'))()
+}
+
+#' @rdname global_social_metrics
+#' @export
+global_social_metrics <- function() new_rsm(db_tbl('raw_social_metrics_cs'),
+                                            'source_name', NULL)
 
 #' @rdname raw_social_metrics
 #' @export
-city_social_metrics <- function() new_rsm(
-  db_tbl('city_social_metrics'), 'source_name_idx')
+city_social_metrics <- function() regionalized_rsm('city')
 
 #' @rdname raw_social_metrics
 #' @export
-state_social_metrics <- function() new_rsm(
-  db_tbl('state_social_metrics'), 'source_name_idx')
+state_social_metrics <- function() regionalized_rsm('state')
 
 #' @rdname raw_social_metrics
 #' @export
-region_social_metrics <- function() new_rsm(
-  db_tbl('region_social_metrics'), 'source_name_idx')
+region_social_metrics <- function() regionalized_rsm('region')
+
+regionalized_rsm <- function(scope) {
+  new_rsm(db_tbl(g('{scope}_social_metrics')), 'source_name_idx', scope)
+}
 
 #' @export
 collect.rsm <- function(x, ...) mutate(
-  new_rsm(NextMethod(), attributes(x)$source_name_idx),
+  new_rsm(NextMethod(), attributes(x)$source_name_idx, attributes(x)$scope),
   across(matches('metric_date'), ~as.POSIXct(.))) # freaking DBI bug
 
-new_rsm <- function(.tbl, source_name_idx) {
+new_rsm <- function(.tbl, source_name_idx, scope = NULL) {
   class(.tbl) <- c('rsm', class(.tbl))
-  attributes(.tbl)$source_name_idx = source_name_idx
+  attributes(.tbl)$source_name_idx <- source_name_idx
+
+  if (!is.null(scope)) {
+    attributes(.tbl)$scope <- scope
+    class(.tbl) <- c('regionalized_rsm', class(.tbl))
+  }
+
   .tbl
 }
 
@@ -321,5 +338,17 @@ source_indices <- function(source_names) {
   source_name_mapping %>%
     get_keys(source_names, source_name, unique = TRUE) %>%
     pull(raw_social_metrics_index)
+}
+
+#' @export
+supported_location_types.regionalized_rsm <- function(.tbl) {
+  attributes(.tbl)$scope
+}
+
+#' @export
+for_location_.regionalized_rsm <- function(.tbl, location_type, location_id) {
+  filter_expr <- str2expression(
+    g('{attributes(.tbl)$scope}_id == {location_id}'))[[1]]
+  .tbl %>% filter(!!filter_expr)
 }
 
